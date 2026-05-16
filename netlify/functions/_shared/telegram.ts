@@ -1,5 +1,4 @@
-import { readFile } from "node:fs/promises";
-import { photoPath } from "./storage";
+import { readPhoto } from "./storage";
 import type { Report } from "./types";
 
 declare const Netlify: {
@@ -22,11 +21,16 @@ export async function sendReportToTelegram(report: Report): Promise<void> {
   });
 
   for (const photo of report.photos) {
-    const bytes = await readFile(await photoPath(photo.filename));
+    const storedPhoto = await readPhoto(photo.filename);
+
+    if (!storedPhoto) {
+      throw new Error(`Photo ${photo.filename} was not found.`);
+    }
+
     const form = new FormData();
     form.append("chat_id", chatId);
     form.append("caption", `${report.reportId} - ${photo.originalName}`);
-    form.append("photo", new Blob([bytes], { type: photo.mimeType }), photo.originalName);
+    form.append("photo", new Blob([storedPhoto.body], { type: storedPhoto.mimeType }), photo.originalName);
 
     await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
       method: "POST",

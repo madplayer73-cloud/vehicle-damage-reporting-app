@@ -38,6 +38,7 @@ Set:
 ```bash
 TELEGRAM_BOT_TOKEN=your_bot_token
 TELEGRAM_CHAT_ID=your_chat_id
+REPORT_STORAGE_DRIVER=local
 REPORT_STORAGE_DIR=./local-data
 ```
 
@@ -87,7 +88,7 @@ The app sends a text summary first, then each photo as an attachment.
 
 ## Local Storage
 
-Reports are saved in:
+For local development, reports are saved in:
 
 ```text
 local-data/reports.json
@@ -101,6 +102,8 @@ local-data/photos/
 
 These files are ignored by Git.
 
+On Netlify production, leave `REPORT_STORAGE_DRIVER` unset or set it to `blobs`. The app then uses Netlify Blobs for durable report and photo storage.
+
 ## API Routes
 
 - `GET /api/reports` lists all reports
@@ -112,7 +115,7 @@ These files are ignored by Git.
 ## Known Limitations
 
 - Local JSON storage is for MVP and local testing only.
-- Netlify Functions do not provide durable filesystem persistence for production storage.
+- Production deploys should use Netlify Blobs, which is the default on Netlify.
 - No user login or role permissions yet.
 - No VIN OCR, barcode scanning, PDF export or Excel export yet.
 - Telegram sending depends on bot permissions and correct chat ID.

@@ -2,6 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { basename, extname, join, resolve } from "node:path";
 import { randomUUID } from "node:crypto";
+import { getStore } from "@netlify/blobs";
 import type { Report, ReportInput, ReportPhoto } from "./types";
 
 declare const Netlify: {
@@ -13,6 +14,9 @@ declare const Netlify: {
 type StoreData = {
   reports: Report[];
 };
+
+const reportsKey = "reports.json";
+const photoPrefix = "photos/";
 
 function storageRoot(): string {
   const configured = Netlify.env.get("REPORT_STORAGE_DIR");
@@ -27,6 +31,23 @@ function photosDir(): string {
   return join(storageRoot(), "photos");
 }
 
+function storageDriver(): "local" | "blobs" {
+  const configured = Netlify.env.get("REPORT_STORAGE_DRIVER");
+  if (configured === "local" || configured === "blobs") {
+    return configured;
+  }
+
+  return Netlify.env.get("NETLIFY") ? "blobs" : "local";
+}
+
+function reportStore() {
+  return getStore({ name: "vehicle-damage-reports", consistency: "strong" });
+}
+
+function photoStore() {
+  return getStore({ name: "vehicle-damage-photos", consistency: "strong" });
+}
+
 async function ensureStorage(): Promise<void> {
   await mkdir(photosDir(), { recursive: true });
   if (!existsSync(reportsFile())) {
@@ -35,12 +56,22 @@ async function ensureStorage(): Promise<void> {
 }
 
 export async function readStore(): Promise<StoreData> {
+  if (storageDriver() === "blobs") {
+    const stored = await reportStore().get(reportsKey, { type: "json" });
+    return (stored as StoreData | null) || { reports: [] };
+  }
+
   await ensureStorage();
   const raw = await readFile(reportsFile(), "utf8");
   return JSON.parse(raw) as StoreData;
 }
 
 export async function writeStore(data: StoreData): Promise<void> {
+  if (storageDriver() === "blobs") {
+    await reportStore().setJSON(reportsKey, data);
+    return;
+  }
+
   await ensureStorage();
   await writeFile(reportsFile(), JSON.stringify(data, null, 2), "utf8");
 }
@@ -92,22 +123,32 @@ export async function createReport(input: ReportInput, photos: File[]): Promise<
 
 export async function readPhoto(filename: string): Promise<{ body: Buffer; mimeType: string } | undefined> {
   const safeName = basename(filename);
+
+  if (storageDriver() === "blobs") {
+    const key = `${photoPrefix}${safeName}`;
+    const stored = await photoStore().getWithMetadata(key, { type: "arrayBuffer" });
+
+    if (!stored) {
+      return undefined;
+    }
+
+    const metadata = stored.metadata as { contentType?: string } | null;
+    return {
+      body: Buffer.from(stored.data),
+      mimeType: metadata?.contentType || contentTypeFromName(safeName),
+    };
+  }
+
   const filePath = join(photosDir(), safeName);
 
   if (!existsSync(filePath)) {
     return undefined;
   }
 
-  const ext = extname(safeName).toLowerCase();
-  const mimeType = ext === ".png" ? "image/png" : "image/jpeg";
   return {
     body: await readFile(filePath),
-    mimeType,
+    mimeType: contentTypeFromName(safeName),
   };
-}
-
-export async function photoPath(filename: string): Promise<string> {
-  return join(photosDir(), basename(filename));
 }
 
 async function savePhotos(reportId: string, photos: File[]): Promise<ReportPhoto[]> {
@@ -117,7 +158,14 @@ async function savePhotos(reportId: string, photos: File[]): Promise<ReportPhoto
     const extension = extensionFor(photo);
     const filename = `${reportId}-${randomUUID()}${extension}`;
     const bytes = Buffer.from(await photo.arrayBuffer());
-    await writeFile(join(photosDir(), filename), bytes);
+
+    if (storageDriver() === "blobs") {
+      await photoStore().set(`${photoPrefix}${filename}`, bytes, {
+        metadata: { contentType: photo.type, originalName: photo.name },
+      });
+    } else {
+      await writeFile(join(photosDir(), filename), bytes);
+    }
 
     saved.push({
       filename,
@@ -129,6 +177,11 @@ async function savePhotos(reportId: string, photos: File[]): Promise<ReportPhoto
   }
 
   return saved;
+}
+
+function contentTypeFromName(filename: string): string {
+  const ext = extname(filename).toLowerCase();
+  return ext === ".png" ? "image/png" : "image/jpeg";
 }
 
 function extensionFor(file: File): string {
