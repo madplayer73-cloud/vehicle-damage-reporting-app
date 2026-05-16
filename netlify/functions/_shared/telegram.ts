@@ -20,19 +20,34 @@ export async function sendReportToTelegram(report: Report): Promise<void> {
     text: formatReport(report),
   });
 
-  for (const photo of report.photos) {
-    const storedPhoto = await readPhoto(photo.filename);
+  await sendPhotoAlbums(token, chatId, report);
+}
 
-    if (!storedPhoto) {
-      throw new Error(`Photo ${photo.filename} was not found.`);
+async function sendPhotoAlbums(token: string, chatId: string, report: Report): Promise<void> {
+  const chunkSize = 10;
+
+  for (let start = 0; start < report.photos.length; start += chunkSize) {
+    const photoChunk = report.photos.slice(start, start + chunkSize);
+    const form = new FormData();
+    const media: Array<{ type: "photo"; media: string }> = [];
+
+    form.append("chat_id", chatId);
+
+    for (const [index, photo] of photoChunk.entries()) {
+      const storedPhoto = await readPhoto(photo.filename);
+
+      if (!storedPhoto) {
+        throw new Error(`Photo ${photo.filename} was not found.`);
+      }
+
+      const fieldName = `photo_${start + index}`;
+      form.append(fieldName, new Blob([storedPhoto.body], { type: storedPhoto.mimeType }), photo.originalName);
+      media.push({ type: "photo", media: `attach://${fieldName}` });
     }
 
-    const form = new FormData();
-    form.append("chat_id", chatId);
-    form.append("caption", `${report.reportId} - ${photo.originalName}`);
-    form.append("photo", new Blob([storedPhoto.body], { type: storedPhoto.mimeType }), photo.originalName);
+    form.append("media", JSON.stringify(media));
 
-    await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+    await fetch(`https://api.telegram.org/bot${token}/sendMediaGroup`, {
       method: "POST",
       body: form,
     }).then(async (response) => {
