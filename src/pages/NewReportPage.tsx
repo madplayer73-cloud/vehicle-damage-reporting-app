@@ -5,6 +5,7 @@ import { DAMAGE_AREAS, type ReportDraft, type TelegramStatus } from "../lib/type
 import { PageHeader } from "../components/PageHeader";
 import { VinScanner } from "../components/VinScanner";
 import { usePreferences, type TranslationKey } from "../lib/preferences";
+import { REPORT_LOCATIONS, VEHICLE_BRANDS, VEHICLE_MODELS_BY_BRAND } from "../data/vehicleData";
 
 type NewReportPageProps = {
   onCreated?: (reportId: string) => void;
@@ -40,6 +41,7 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
     () => photos.map((photo) => ({ name: photo.name, url: URL.createObjectURL(photo) })),
     [photos],
   );
+  const modelOptions = VEHICLE_MODELS_BY_BRAND[draft.brand] || [];
 
   const update = (field: keyof ReportDraft, value: string) => {
     setDraft((current) => ({ ...current, [field]: value }));
@@ -148,11 +150,21 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
               {scanWarning && <div className="warning-box">{scanWarning}</div>}
               <label className="field">
                 {t("new.brand")}
-                <input value={draft.brand} onChange={(event) => update("brand", event.target.value)} placeholder="Peugeot" />
+                <input
+                  value={draft.brand}
+                  onChange={(event) => update("brand", event.target.value)}
+                  placeholder="Peugeot"
+                  list="vehicle-brand-options"
+                />
               </label>
               <label className="field">
                 {t("new.model")}
-                <input value={draft.model} onChange={(event) => update("model", event.target.value)} placeholder="308 SW" />
+                <input
+                  value={draft.model}
+                  onChange={(event) => update("model", event.target.value)}
+                  placeholder="308 SW"
+                  list="vehicle-model-options"
+                />
               </label>
               <label className="field">
                 {t("new.location")}
@@ -160,6 +172,7 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
                   value={draft.location}
                   onChange={(event) => update("location", event.target.value)}
                   placeholder="CEVA Hub Trnava"
+                  list="report-location-options"
                 />
               </label>
               <label className="field">
@@ -167,6 +180,21 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
                 <input value={draft.reportedBy} onChange={(event) => update("reportedBy", event.target.value)} placeholder="Attila" />
               </label>
               {vinLast8.length === 8 && <div className="confirmation">{t("new.identifierConfirmed")} {vinLast8}</div>}
+              <datalist id="vehicle-brand-options">
+                {VEHICLE_BRANDS.map((brand) => (
+                  <option key={brand} value={brand} />
+                ))}
+              </datalist>
+              <datalist id="vehicle-model-options">
+                {modelOptions.map((model) => (
+                  <option key={model} value={model} />
+                ))}
+              </datalist>
+              <datalist id="report-location-options">
+                {REPORT_LOCATIONS.map((location) => (
+                  <option key={location} value={location} />
+                ))}
+              </datalist>
             </div>
           )}
 

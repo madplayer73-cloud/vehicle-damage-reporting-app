@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { Html5Qrcode as Html5QrcodeScanner } from "html5-qrcode";
 import { X } from "lucide-react";
 
@@ -15,6 +15,7 @@ export type ScanResult = {
 
 export function VinScanner({ onDetected, onClose }: VinScannerProps) {
   const scannerId = useId().replaceAll(":", "");
+  const lastScanRef = useRef({ text: "", at: 0 });
   const [error, setError] = useState("");
   const [scannedText, setScannedText] = useState("");
 
@@ -57,6 +58,13 @@ export function VinScanner({ onDetected, onClose }: VinScannerProps) {
             }),
           },
           (decodedText: string) => {
+            const now = Date.now();
+            if (lastScanRef.current.text === decodedText && now - lastScanRef.current.at < 1800) {
+              return;
+            }
+            lastScanRef.current = { text: decodedText, at: now };
+
+            notifyScan();
             const normalized = normalizeCode(decodedText);
             const vin = extractVin(normalized);
             const vis = extractVis(normalized);
@@ -68,7 +76,10 @@ export function VinScanner({ onDetected, onClose }: VinScannerProps) {
             } else if (vis) {
               onDetected({ kind: "vis", value: vis, rawValue: decodedText });
             } else {
-              setError(`Code was scanned (${normalized.length} characters), but it is not a 17-character VIN.`);
+              onDetected({ kind: "unknown", value: normalized, rawValue: decodedText });
+              setError(
+                `Code was scanned (${normalized.length} characters), but it is not VIN or VIS. For a correct damage report, scan or enter VIN or VIS manually.`,
+              );
             }
           },
           () => undefined,
@@ -111,6 +122,33 @@ export function VinScanner({ onDetected, onClose }: VinScannerProps) {
       </div>
     </div>
   );
+}
+
+function notifyScan(): void {
+  if ("vibrate" in navigator) {
+    navigator.vibrate(120);
+  }
+
+  const AudioContextClass = window.AudioContext || getWebkitAudioContext();
+  if (!AudioContextClass) {
+    return;
+  }
+
+  const audioContext = new AudioContextClass();
+  const oscillator = audioContext.createOscillator();
+  const gain = audioContext.createGain();
+
+  oscillator.type = "sine";
+  oscillator.frequency.value = 880;
+  gain.gain.value = 0.08;
+  oscillator.connect(gain);
+  gain.connect(audioContext.destination);
+  oscillator.start();
+  oscillator.stop(audioContext.currentTime + 0.12);
+}
+
+function getWebkitAudioContext(): typeof AudioContext | undefined {
+  return (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
 }
 
 function normalizeCode(decodedText: string): string {

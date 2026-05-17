@@ -1,0 +1,47 @@
+export const VEHICLE_BRANDS = [
+  "Audi",
+  "BMW",
+  "Citroen",
+  "Dacia",
+  "Fiat",
+  "Ford",
+  "Hyundai",
+  "Kia",
+  "Mercedes-Benz",
+  "Opel",
+  "Peugeot",
+  "Renault",
+  "Skoda",
+  "Toyota",
+  "Volkswagen",
+  "Volvo",
+];
+
+export const VEHICLE_MODELS_BY_BRAND: Record<string, string[]> = {
+  Audi: ["A3", "A4", "Q3", "Q5"],
+  BMW: ["1 Series", "3 Series", "X1", "X3"],
+  Citroen: ["Berlingo", "C3", "C4", "Jumper"],
+  Dacia: ["Duster", "Jogger", "Sandero"],
+  Fiat: ["500", "Doblo", "Ducato"],
+  Ford: ["Focus", "Kuga", "Puma", "Transit"],
+  Hyundai: ["i20", "i30", "Kona", "Tucson"],
+  Kia: ["Ceed", "Niro", "Sportage"],
+  "Mercedes-Benz": ["A-Class", "C-Class", "Sprinter", "Vito"],
+  Opel: ["Astra", "Corsa", "Movano", "Vivaro"],
+  Peugeot: ["208", "308", "308 SW", "Boxer", "Partner"],
+  Renault: ["Clio", "Kangoo", "Master", "Trafic"],
+  Skoda: ["Fabia", "Kamiq", "Karoq", "Octavia"],
+  Toyota: ["Corolla", "Proace", "Proace City", "Yaris"],
+  Volkswagen: ["Caddy", "Golf", "Passat", "Transporter"],
+  Volvo: ["EX30", "XC40", "XC60", "XC90"],
+};
+
+export const REPORT_LOCATIONS = [
+  "CEVA Hub Trnava",
+  "Ceva Budapest",
+  "Yard inbound",
+  "Yard outbound",
+  "Compound",
+  "Workshop",
+  "Dealer handover",
+];
