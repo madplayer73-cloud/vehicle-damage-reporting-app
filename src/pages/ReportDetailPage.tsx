@@ -4,6 +4,7 @@ import { getReport } from "../lib/api";
 import type { Report } from "../lib/types";
 import { PageHeader } from "../components/PageHeader";
 import { StatusBadge } from "../components/StatusBadge";
+import { usePreferences } from "../lib/preferences";
 
 type ReportDetailPageProps = {
   reportId: string;
@@ -11,6 +12,7 @@ type ReportDetailPageProps = {
 };
 
 export function ReportDetailPage({ reportId, onBack }: ReportDetailPageProps) {
+  const { t } = usePreferences();
   const [report, setReport] = useState<Report>();
   const [error, setError] = useState("");
 
@@ -25,7 +27,7 @@ export function ReportDetailPage({ reportId, onBack }: ReportDetailPageProps) {
       <section>
         <button className="link-button" onClick={onBack}>
           <ArrowLeft size={18} />
-          Back to reports
+          {t("detail.back")}
         </button>
         {error ? <div className="error-box">{error}</div> : <div className="empty-state">Loading report...</div>}
       </section>
@@ -36,7 +38,7 @@ export function ReportDetailPage({ reportId, onBack }: ReportDetailPageProps) {
     <section>
       <button className="link-button" onClick={onBack}>
         <ArrowLeft size={18} />
-        Back to reports
+        {t("detail.back")}
       </button>
 
       <PageHeader
@@ -48,26 +50,26 @@ export function ReportDetailPage({ reportId, onBack }: ReportDetailPageProps) {
       <div className="detail-layout">
         <div className="panel">
           <div className="detail-head">
-            <h2>Report data</h2>
+            <h2>{t("detail.reportData")}</h2>
             <StatusBadge status={report.telegramStatus} />
           </div>
           <div className="review-grid">
-            <DetailRow label="VIN" value={report.vin || "-"} />
-            <DetailRow label="VIS / VIN last 8" value={report.vinLast8 || "-"} />
-            <DetailRow label="Brand" value={report.brand || "-"} />
-            <DetailRow label="Model" value={report.model || "-"} />
-            <DetailRow label="Location" value={report.location || "-"} />
-            <DetailRow label="Reported by" value={report.reportedBy || "-"} />
-            <DetailRow label="Damage area" value={report.damageArea} />
-            <DetailRow label="Description" value={report.damageDescription} />
-            <DetailRow label="Photos" value={`${report.photos.length} archived in Telegram`} />
+            <DetailRow label={t("new.reviewVin")} value={report.vin || "-"} />
+            <DetailRow label={t("new.reviewVis")} value={report.vinLast8 || "-"} />
+            <DetailRow label={t("new.brand")} value={report.brand || "-"} />
+            <DetailRow label={t("new.model")} value={report.model || "-"} />
+            <DetailRow label={t("new.location")} value={report.location || "-"} />
+            <DetailRow label={t("new.reportedBy")} value={report.reportedBy || "-"} />
+            <DetailRow label={t("new.area")} value={report.damageArea} />
+            <DetailRow label={t("new.damageDescription")} value={report.damageDescription} />
+            <DetailRow label={t("new.photos")} value={`${report.photos.length} archived in Telegram`} />
           </div>
           {report.telegramError && <div className="error-box">{report.telegramError}</div>}
         </div>
 
         <div className="panel">
-          <h2>Telegram photo archive</h2>
-          <p className="muted-copy">Photos are not stored in the app. Use the Telegram report thread as the photo archive.</p>
+          <h2>{t("detail.telegramArchive")}</h2>
+          <p className="muted-copy">{t("detail.telegramArchiveHint")}</p>
           <div className="file-list">
             {report.photos.map((photo) => (
               <div key={photo.filename}>{photo.originalName}</div>

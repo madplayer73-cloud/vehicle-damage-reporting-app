@@ -5,12 +5,14 @@ import type { Report } from "../lib/types";
 import { DAMAGE_AREAS } from "../lib/types";
 import { PageHeader } from "../components/PageHeader";
 import { StatusBadge } from "../components/StatusBadge";
+import { usePreferences } from "../lib/preferences";
 
 type ReportsPageProps = {
   onOpen: (reportId: string) => void;
 };
 
 export function ReportsPage({ onOpen }: ReportsPageProps) {
+  const { t } = usePreferences();
   const [reports, setReports] = useState<Report[]>([]);
   const [query, setQuery] = useState("");
   const [brand, setBrand] = useState("");
@@ -39,19 +41,19 @@ export function ReportsPage({ onOpen }: ReportsPageProps) {
   return (
     <section>
       <PageHeader
-        eyebrow="Admin"
-        title="Report list"
-        description="Search reports by VIN, last 8 characters, brand or damaged area."
+        eyebrow={t("reports.eyebrow")}
+        title={t("reports.title")}
+        description={t("reports.description")}
       />
 
       <div className="filter-bar">
         <label className="search-field">
           <Search size={18} />
-          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search VIN or last 8" />
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={t("reports.search")} />
         </label>
-        <input value={brand} onChange={(event) => setBrand(event.target.value)} placeholder="Filter brand" />
+        <input value={brand} onChange={(event) => setBrand(event.target.value)} placeholder={t("reports.filterBrand")} />
         <select value={area} onChange={(event) => setArea(event.target.value)}>
-          <option value="">All damage areas</option>
+          <option value="">{t("reports.allAreas")}</option>
           {DAMAGE_AREAS.map((damageArea) => (
             <option key={damageArea} value={damageArea}>
               {damageArea}
@@ -64,14 +66,14 @@ export function ReportsPage({ onOpen }: ReportsPageProps) {
 
       <div className="table-card">
         <div className="table-header">
-          <span>Report ID</span>
-          <span>VIS / last 8</span>
-          <span>Vehicle</span>
-          <span>Area</span>
-          <span>Status</span>
+          <span>{t("reports.reportId")}</span>
+          <span>{t("reports.vis")}</span>
+          <span>{t("reports.vehicle")}</span>
+          <span>{t("reports.area")}</span>
+          <span>{t("reports.status")}</span>
         </div>
 
-        {filteredReports.length === 0 && <div className="empty-state">No reports found.</div>}
+        {filteredReports.length === 0 && <div className="empty-state">{t("reports.noReports")}</div>}
 
         {filteredReports.map((report) => (
           <button key={report.reportId} className="table-row" onClick={() => onOpen(report.reportId)}>

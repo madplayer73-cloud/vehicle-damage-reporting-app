@@ -1,43 +1,61 @@
 import { Moon, Sun } from "lucide-react";
 import { PageHeader } from "../components/PageHeader";
+import { supportedLanguages, usePreferences, type Theme } from "../lib/preferences";
 
 export function SettingsPage() {
+  const { language, setLanguage, setTheme, t, theme } = usePreferences();
+  const themes: Array<{ value: Theme; label: string; icon: typeof Sun }> = [
+    { value: "light", label: t("settings.light"), icon: Sun },
+    { value: "dark", label: t("settings.dark"), icon: Moon },
+  ];
+
   return (
     <section>
       <PageHeader
-        eyebrow="App settings"
-        title="Settings"
-        description="Prepare display and language preferences for the next development phase."
+        eyebrow={t("settings.eyebrow")}
+        title={t("settings.title")}
+        description={t("settings.description")}
       />
 
       <div className="settings-grid">
         <div className="panel">
-          <h2>Language</h2>
+          <h2>{t("settings.language")}</h2>
           <div className="segmented-control" aria-label="Language selection">
-            <button className="active">EN</button>
-            <button disabled>SK</button>
-            <button disabled>HU</button>
+            {supportedLanguages.map((option) => (
+              <button
+                key={option.code}
+                className={language === option.code ? "active" : ""}
+                onClick={() => setLanguage(option.code)}
+              >
+                {option.label}
+              </button>
+            ))}
           </div>
-          <p className="muted-copy">English is active. Slovak and Hungarian translations are planned for V_1.</p>
+          <p className="muted-copy">{t("settings.languageHint")}</p>
         </div>
 
         <div className="panel">
-          <h2>Theme</h2>
+          <h2>{t("settings.theme")}</h2>
           <div className="segmented-control" aria-label="Theme selection">
-            <button className="active">
-              <Sun size={17} />
-              Light
-            </button>
-            <button disabled>
-              <Moon size={17} />
-              Dark
-            </button>
+            {themes.map((option) => {
+              const Icon = option.icon;
+              return (
+                <button
+                  key={option.value}
+                  className={theme === option.value ? "active" : ""}
+                  onClick={() => setTheme(option.value)}
+                >
+                  <Icon size={17} />
+                  {option.label}
+                </button>
+              );
+            })}
           </div>
-          <p className="muted-copy">Light mode is active. Dark mode is prepared as a future setting.</p>
+          <p className="muted-copy">{t("settings.themeHint")}</p>
         </div>
 
         <div className="panel">
-          <h2>Version</h2>
+          <h2>{t("settings.version")}</h2>
           <div className="version-card">
             <strong>Beta V_0</strong>
             <span>Vehicle Damage Reporting App MVP</span>

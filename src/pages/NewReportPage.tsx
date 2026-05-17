@@ -4,6 +4,7 @@ import { createReport, getUserName } from "../lib/api";
 import { DAMAGE_AREAS, type ReportDraft, type TelegramStatus } from "../lib/types";
 import { PageHeader } from "../components/PageHeader";
 import { VinScanner } from "../components/VinScanner";
+import { usePreferences, type TranslationKey } from "../lib/preferences";
 
 type NewReportPageProps = {
   onCreated: (reportId: string) => void;
@@ -23,6 +24,7 @@ const initialDraft: ReportDraft = {
 };
 
 export function NewReportPage({ onCreated }: NewReportPageProps) {
+  const { t } = usePreferences();
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<ReportDraft>(() => ({ ...initialDraft, reportedBy: getUserName() }));
   const [photos, setPhotos] = useState<File[]>([]);
@@ -44,7 +46,7 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
   };
 
   const next = () => {
-    const validation = validateStep(step, draft, photos);
+    const validation = validateStep(step, draft, photos, t);
     if (validation) {
       setError(validation);
       return;
@@ -60,7 +62,7 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
   };
 
   const submitReport = async () => {
-    const validation = validateStep(4, draft, photos);
+    const validation = validateStep(4, draft, photos, t);
     if (validation) {
       setError(validation);
       return;
@@ -90,9 +92,9 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
   return (
     <section>
       <PageHeader
-        eyebrow="Guided workflow"
-        title="New damage report"
-        description="Create one structured vehicle damage report and send it to Telegram with photos attached."
+        eyebrow={t("new.eyebrow")}
+        title={t("new.title")}
+        description={t("new.description")}
       />
 
       <div className="wizard-layout">
@@ -109,7 +111,7 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
           {step === 0 && (
             <div className="form-grid">
               <label className="field wide">
-                Full VIN
+                {t("new.fullVin")}
                 <div className="input-action">
                   <input
                     value={draft.vin}
@@ -124,7 +126,7 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
                 <small>{draft.vin.length}/17 characters</small>
               </label>
               <label className="field wide">
-                VIS / VIN last 8
+                {t("new.vis")}
                 <input
                   value={draft.vinLast8Input || ""}
                   maxLength={8}
@@ -135,15 +137,15 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
               </label>
               {scanWarning && <div className="warning-box">{scanWarning}</div>}
               <label className="field">
-                Brand
+                {t("new.brand")}
                 <input value={draft.brand} onChange={(event) => update("brand", event.target.value)} placeholder="Peugeot" />
               </label>
               <label className="field">
-                Model
+                {t("new.model")}
                 <input value={draft.model} onChange={(event) => update("model", event.target.value)} placeholder="308 SW" />
               </label>
               <label className="field">
-                Location
+                {t("new.location")}
                 <input
                   value={draft.location}
                   onChange={(event) => update("location", event.target.value)}
@@ -151,10 +153,10 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
                 />
               </label>
               <label className="field">
-                Reported by
+                {t("new.reportedBy")}
                 <input value={draft.reportedBy} onChange={(event) => update("reportedBy", event.target.value)} placeholder="Attila" />
               </label>
-              {vinLast8.length === 8 && <div className="confirmation">Vehicle identifier confirmed. Last 8 characters: {vinLast8}</div>}
+              {vinLast8.length === 8 && <div className="confirmation">{t("new.identifierConfirmed")} {vinLast8}</div>}
             </div>
           )}
 
@@ -174,7 +176,7 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
 
           {step === 2 && (
             <label className="field">
-              Damage description
+              {t("new.damageDescription")}
               <textarea
                 value={draft.damageDescription}
                 onChange={(event) => update("damageDescription", event.target.value)}
@@ -188,8 +190,8 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
             <div>
               <label className="upload-box">
                 <Upload size={26} />
-                <strong>Upload or take photos</strong>
-                <span>JPG, JPEG and PNG are supported.</span>
+                <strong>{t("new.uploadTitle")}</strong>
+                <span>{t("new.uploadHint")}</span>
                 <input
                   type="file"
                   accept="image/jpeg,image/jpg,image/png"
@@ -210,26 +212,26 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
 
           {step === 4 && (
             <div className="review-grid">
-              <ReviewRow label="VIN" value={draft.vin || "-"} />
-              <ReviewRow label="VIS / VIN last 8" value={vinLast8} />
-              <ReviewRow label="Brand/model" value={`${draft.brand || "-"} ${draft.model || ""}`} />
-              <ReviewRow label="Location" value={draft.location || "-"} />
-              <ReviewRow label="Reported by" value={draft.reportedBy || "-"} />
-              <ReviewRow label="Damage area" value={draft.damageArea} />
-              <ReviewRow label="Description" value={draft.damageDescription} />
-              <ReviewRow label="Photos" value={`${photos.length} attached`} />
+              <ReviewRow label={t("new.reviewVin")} value={draft.vin || "-"} />
+              <ReviewRow label={t("new.reviewVis")} value={vinLast8} />
+              <ReviewRow label={t("new.brandModel")} value={`${draft.brand || "-"} ${draft.model || ""}`} />
+              <ReviewRow label={t("new.location")} value={draft.location || "-"} />
+              <ReviewRow label={t("new.reportedBy")} value={draft.reportedBy || "-"} />
+              <ReviewRow label={t("new.area")} value={draft.damageArea} />
+              <ReviewRow label={t("new.damageDescription")} value={draft.damageDescription} />
+              <ReviewRow label={t("new.photos")} value={`${photos.length} attached`} />
             </div>
           )}
 
           {step === 5 && (
             <div className="send-panel">
               <Camera size={40} />
-              <h2>Report is saved</h2>
+              <h2>{t("new.reportSaved")}</h2>
               <p>
                 Report ID: {createdId}.{" "}
                 {createdStatus === "sent"
-                  ? "Photos are archived in Telegram and metadata is saved in the app."
-                  : "Telegram sending needs attention; metadata is saved in the app."}
+                  ? t("new.savedSent")
+                  : t("new.savedFailed")}
               </p>
             </div>
           )}
@@ -239,23 +241,23 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
           <div className="actions">
             <button className="secondary" onClick={back} disabled={step === 0 || isSubmitting}>
               <ChevronLeft size={18} />
-              Back
+              {t("new.back")}
             </button>
             {step < 4 && (
               <button onClick={next}>
-                Continue
+                {t("new.continue")}
                 <ChevronRight size={18} />
               </button>
             )}
             {step === 4 && (
               <button onClick={submitReport} disabled={isSubmitting}>
-                Save & send
+                {t("new.saveSend")}
                 <Check size={18} />
               </button>
             )}
             {step === 5 && (
               <button onClick={() => createdId && onCreated(createdId)} disabled={!createdId}>
-                Open report
+                {t("new.openReport")}
                 <ChevronRight size={18} />
               </button>
             )}
@@ -281,7 +283,7 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
               return;
             }
 
-            setScanWarning("Scanned code does not look like VIN or VIS. Find VIN/VIS and scan it, or enter it manually.");
+            setScanWarning(t("new.scanWarning"));
           }}
         />
       )}
@@ -298,25 +300,25 @@ function ReviewRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-function validateStep(step: number, draft: ReportDraft, photos: File[]): string {
+function validateStep(step: number, draft: ReportDraft, photos: File[], t: (key: TranslationKey) => string): string {
   if (step === 0 && draft.vin && draft.vin.length !== 17) {
-    return "VIN must have exactly 17 characters.";
+    return t("new.validateVin");
   }
 
   if (step === 0 && !draft.vin && (draft.vinLast8Input || "").length !== 8) {
-    return "Enter a full 17-character VIN or an 8-character VIS / VIN last 8.";
+    return t("new.validateIdentifier");
   }
 
   if (step === 1 && !draft.damageArea) {
-    return "Select a damaged area.";
+    return t("new.validateArea");
   }
 
   if (step === 2 && !draft.damageDescription.trim()) {
-    return "Add a damage description.";
+    return t("new.validateDescription");
   }
 
   if ((step === 3 || step === 4) && photos.length === 0) {
-    return "Add at least one photo.";
+    return t("new.validatePhotos");
   }
 
   return "";

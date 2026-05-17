@@ -6,6 +6,7 @@ import { ReportDetailPage } from "./pages/ReportDetailPage";
 import { LoginPage } from "./pages/LoginPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { clearAccessCode, getAccessCode } from "./lib/api";
+import { loadPreferences, PreferencesContext, saveLanguage, saveTheme, translations, type Language, type Theme } from "./lib/preferences";
 
 type Route =
   | { name: "new-report" }
@@ -16,6 +17,10 @@ type Route =
 export function App() {
   const [path, setPath] = useState(window.location.pathname);
   const [isAuthenticated, setIsAuthenticated] = useState(Boolean(getAccessCode()));
+  const [language, setLanguageState] = useState<Language>(() => loadPreferences().language);
+  const [theme, setThemeState] = useState<Theme>(() => loadPreferences().theme);
+
+  const t = (key: keyof (typeof translations)["en"]) => translations[language][key];
 
   useEffect(() => {
     const onPopState = () => setPath(window.location.pathname);
@@ -50,48 +55,68 @@ export function App() {
     setIsAuthenticated(false);
   };
 
+  const setLanguage = (nextLanguage: Language) => {
+    saveLanguage(nextLanguage);
+    setLanguageState(nextLanguage);
+  };
+
+  const setTheme = (nextTheme: Theme) => {
+    saveTheme(nextTheme);
+    setThemeState(nextTheme);
+  };
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+  }, [theme]);
+
   if (!isAuthenticated) {
-    return <LoginPage onAuthenticated={() => setIsAuthenticated(true)} />;
+    return (
+      <PreferencesContext.Provider value={{ language, theme, setLanguage, setTheme, t }}>
+        <LoginPage onAuthenticated={() => setIsAuthenticated(true)} />
+      </PreferencesContext.Provider>
+    );
   }
 
   return (
-    <div className="app-shell">
-      <aside className="sidebar">
-        <div className="brand-lockup">
-          <div className="brand-mark">DR</div>
-          <div>
-            <strong>Vehicle Damage</strong>
-            <span>Reporting App</span>
+    <PreferencesContext.Provider value={{ language, theme, setLanguage, setTheme, t }}>
+      <div className="app-shell">
+        <aside className="sidebar">
+          <div className="brand-lockup">
+            <div className="brand-mark">DR</div>
+            <div>
+              <strong>Vehicle Damage</strong>
+              <span>{t("app.subtitle")}</span>
+            </div>
           </div>
-        </div>
-        <div className="version-badge">Beta V_0</div>
+          <div className="version-badge">Beta V_0</div>
 
-        <nav className="nav-list" aria-label="Main navigation">
-          <button className={route.name === "new-report" ? "active" : ""} onClick={() => navigate("/new-report")}>
-            <FilePlus2 size={18} />
-            New report
-          </button>
-          <button className={route.name !== "new-report" ? "active" : ""} onClick={() => navigate("/reports")}>
-            <ClipboardList size={18} />
-            Reports
-          </button>
-          <button className={route.name === "settings" ? "active" : ""} onClick={() => navigate("/settings")}>
-            <Settings size={18} />
-            Settings
-          </button>
-          <button onClick={logout}>
-            <LogOut size={18} />
-            Logout
-          </button>
-        </nav>
-      </aside>
+          <nav className="nav-list" aria-label="Main navigation">
+            <button className={route.name === "new-report" ? "active" : ""} onClick={() => navigate("/new-report")}>
+              <FilePlus2 size={18} />
+              {t("nav.newReport")}
+            </button>
+            <button className={route.name !== "new-report" ? "active" : ""} onClick={() => navigate("/reports")}>
+              <ClipboardList size={18} />
+              {t("nav.reports")}
+            </button>
+            <button className={route.name === "settings" ? "active" : ""} onClick={() => navigate("/settings")}>
+              <Settings size={18} />
+              {t("nav.settings")}
+            </button>
+            <button onClick={logout}>
+              <LogOut size={18} />
+              {t("nav.logout")}
+            </button>
+          </nav>
+        </aside>
 
-      <main className="main-content">
-        {route.name === "new-report" && <NewReportPage onCreated={(id) => navigate(`/reports/${id}`)} />}
-        {route.name === "reports" && <ReportsPage onOpen={(id) => navigate(`/reports/${id}`)} />}
-        {route.name === "settings" && <SettingsPage />}
-        {route.name === "report-detail" && <ReportDetailPage reportId={route.id} onBack={() => navigate("/reports")} />}
-      </main>
-    </div>
+        <main className="main-content">
+          {route.name === "new-report" && <NewReportPage onCreated={(id) => navigate(`/reports/${id}`)} />}
+          {route.name === "reports" && <ReportsPage onOpen={(id) => navigate(`/reports/${id}`)} />}
+          {route.name === "settings" && <SettingsPage />}
+          {route.name === "report-detail" && <ReportDetailPage reportId={route.id} onBack={() => navigate("/reports")} />}
+        </main>
+      </div>
+    </PreferencesContext.Provider>
   );
 }
