@@ -5,6 +5,7 @@ import type { Report } from "../lib/types";
 import { PageHeader } from "../components/PageHeader";
 import { StatusBadge } from "../components/StatusBadge";
 import { usePreferences } from "../lib/preferences";
+import { areaByTelegramLabel } from "../data/damageAreas";
 
 type ReportDetailPageProps = {
   reportId: string;
@@ -12,7 +13,7 @@ type ReportDetailPageProps = {
 };
 
 export function ReportDetailPage({ reportId, onBack }: ReportDetailPageProps) {
-  const { t } = usePreferences();
+  const { language, t } = usePreferences();
   const [report, setReport] = useState<Report>();
   const [error, setError] = useState("");
 
@@ -60,7 +61,7 @@ export function ReportDetailPage({ reportId, onBack }: ReportDetailPageProps) {
             <DetailRow label={t("new.model")} value={report.model || "-"} />
             <DetailRow label={t("new.location")} value={report.location || "-"} />
             <DetailRow label={t("new.reportedBy")} value={report.reportedBy || "-"} />
-            <DetailRow label={t("new.area")} value={report.damageArea} />
+            <DetailRow label={t("new.area")} value={areaByTelegramLabel(report.damageArea)?.label[language] || report.damageArea} />
             <DetailRow label={t("new.damageDescription")} value={report.damageDescription} />
             <DetailRow label={t("new.photos")} value={`${report.photos.length} archived in Telegram`} />
           </div>

@@ -1,12 +1,13 @@
 import { useMemo, useState } from "react";
 import { Camera, Check, ChevronLeft, ChevronRight, ImagePlus, ScanLine, Upload } from "lucide-react";
 import { createReport, getUserName } from "../lib/api";
-import { DAMAGE_AREAS, type ReportDraft, type TelegramStatus } from "../lib/types";
+import { type ReportDraft, type TelegramStatus } from "../lib/types";
 import { PageHeader } from "../components/PageHeader";
 import { VinScanner } from "../components/VinScanner";
 import { VinOcrReader } from "../components/VinOcrReader";
 import { usePreferences, type TranslationKey } from "../lib/preferences";
 import { REPORT_LOCATIONS, VEHICLE_BRANDS, VEHICLE_MODELS_BY_BRAND } from "../data/vehicleData";
+import { areaByTelegramLabel, DAMAGE_AREAS } from "../data/damageAreas";
 import {
   getCustomBrands,
   getCustomLocations,
@@ -35,7 +36,7 @@ const initialDraft: ReportDraft = {
 };
 
 export function NewReportPage({ onCreated }: NewReportPageProps) {
-  const { t } = usePreferences();
+  const { language, t } = usePreferences();
   const [step, setStep] = useState(0);
   const [draft, setDraft] = useState<ReportDraft>(() => ({ ...initialDraft, reportedBy: getUserName() }));
   const [photos, setPhotos] = useState<File[]>([]);
@@ -61,6 +62,8 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
     [customModelsByBrand, draft.brand],
   );
   const locationOptions = useMemo(() => mergeOptions(REPORT_LOCATIONS, customLocations), [customLocations]);
+  const selectedArea = areaByTelegramLabel(draft.damageArea);
+  const descriptionSuggestions = selectedArea?.suggestions[language] || [];
 
   const update = (field: keyof ReportDraft, value: string) => {
     setDraft((current) => ({ ...current, [field]: value }));
@@ -251,26 +254,37 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
             <div className="area-grid">
               {DAMAGE_AREAS.map((area) => (
                 <button
-                  key={area}
-                  className={draft.damageArea === area ? "selected" : ""}
-                  onClick={() => update("damageArea", area)}
+                  key={area.id}
+                  className={draft.damageArea === area.telegramLabel ? "selected" : ""}
+                  onClick={() => update("damageArea", area.telegramLabel)}
                 >
-                  {area}
+                  {area.label[language]}
                 </button>
               ))}
             </div>
           )}
 
           {step === 2 && (
-            <label className="field">
-              {t("new.damageDescription")}
-              <textarea
-                value={draft.damageDescription}
-                onChange={(event) => update("damageDescription", event.target.value)}
-                rows={8}
-                placeholder="Scratch on lower right side of bumper"
-              />
-            </label>
+            <div className="description-layout">
+              <label className="field">
+                {t("new.damageDescription")}
+                <textarea
+                  value={draft.damageDescription}
+                  onChange={(event) => update("damageDescription", event.target.value)}
+                  rows={8}
+                  placeholder={descriptionSuggestions[0] || "Scratch on lower right side of bumper"}
+                />
+              </label>
+              {descriptionSuggestions.length > 0 && (
+                <div className="suggestion-grid">
+                  {descriptionSuggestions.map((suggestion) => (
+                    <button key={suggestion} className="secondary suggestion-button" onClick={() => update("damageDescription", suggestion)}>
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           )}
 
           {step === 3 && (
@@ -304,7 +318,7 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
               <ReviewRow label={t("new.brandModel")} value={`${draft.brand || "-"} ${draft.model || ""}`} />
               <ReviewRow label={t("new.location")} value={draft.location || "-"} />
               <ReviewRow label={t("new.reportedBy")} value={draft.reportedBy || "-"} />
-              <ReviewRow label={t("new.area")} value={draft.damageArea} />
+              <ReviewRow label={t("new.area")} value={selectedArea?.label[language] || draft.damageArea} />
               <ReviewRow label={t("new.damageDescription")} value={draft.damageDescription} />
               <ReviewRow label={t("new.photos")} value={`${photos.length} attached`} />
             </div>

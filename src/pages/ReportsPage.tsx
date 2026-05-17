@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
 import { listReports } from "../lib/api";
 import type { Report } from "../lib/types";
-import { DAMAGE_AREAS } from "../lib/types";
+import { areaByTelegramLabel, DAMAGE_AREAS } from "../data/damageAreas";
 import { PageHeader } from "../components/PageHeader";
 import { StatusBadge } from "../components/StatusBadge";
 import { usePreferences } from "../lib/preferences";
@@ -12,7 +12,7 @@ type ReportsPageProps = {
 };
 
 export function ReportsPage({ onOpen }: ReportsPageProps) {
-  const { t } = usePreferences();
+  const { language, t } = usePreferences();
   const [reports, setReports] = useState<Report[]>([]);
   const [query, setQuery] = useState("");
   const [brand, setBrand] = useState("");
@@ -55,8 +55,8 @@ export function ReportsPage({ onOpen }: ReportsPageProps) {
         <select value={area} onChange={(event) => setArea(event.target.value)}>
           <option value="">{t("reports.allAreas")}</option>
           {DAMAGE_AREAS.map((damageArea) => (
-            <option key={damageArea} value={damageArea}>
-              {damageArea}
+            <option key={damageArea.id} value={damageArea.telegramLabel}>
+              {damageArea.label[language]}
             </option>
           ))}
         </select>
@@ -80,7 +80,7 @@ export function ReportsPage({ onOpen }: ReportsPageProps) {
             <strong>{report.reportId}</strong>
             <span>{report.vinLast8}</span>
             <span>{[report.brand, report.model].filter(Boolean).join(" ") || "-"}</span>
-            <span>{report.damageArea}</span>
+            <span>{areaByTelegramLabel(report.damageArea)?.label[language] || report.damageArea}</span>
             <StatusBadge status={report.telegramStatus} />
           </button>
         ))}

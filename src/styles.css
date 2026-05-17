@@ -373,6 +373,24 @@ small {
   color: #fff;
 }
 
+.description-layout {
+  display: grid;
+  gap: 14px;
+}
+
+.suggestion-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px;
+}
+
+.suggestion-button {
+  justify-content: flex-start;
+  min-height: 40px;
+  padding: 9px 12px;
+  text-align: left;
+}
+
 .upload-box {
   display: grid;
   place-items: center;
