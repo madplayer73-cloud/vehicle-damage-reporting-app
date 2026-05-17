@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Camera, Check, ChevronLeft, ChevronRight, ImagePlus, ScanLine, Upload } from "lucide-react";
+import { Camera, Check, ChevronLeft, ChevronRight, ImagePlus, ScanLine, Trash2, Upload } from "lucide-react";
 import { createReport, getUserName } from "../lib/api";
 import { type ReportDraft, type TelegramStatus } from "../lib/types";
 import { PageHeader } from "../components/PageHeader";
@@ -22,7 +22,8 @@ type NewReportPageProps = {
   onCreated?: (reportId: string) => void;
 };
 
-const steps = ["Vehicle", "Area", "Description", "Photos", "Review", "Send"];
+const maxPhotos = 10;
+const steps = ["Vehicle", "Area", "Description", "Measure", "Photos", "Review", "Send"];
 
 const initialDraft: ReportDraft = {
   vin: "",
@@ -33,6 +34,11 @@ const initialDraft: ReportDraft = {
   reportedBy: "",
   damageArea: "",
   damageDescription: "",
+  damageMeasurementType: "",
+  damageLengthMm: "",
+  damageWidthMm: "",
+  damageAreaMm2: "",
+  damageMeasurementNote: "",
 };
 
 export function NewReportPage({ onCreated }: NewReportPageProps) {
@@ -64,9 +70,36 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
   const locationOptions = useMemo(() => mergeOptions(REPORT_LOCATIONS, customLocations), [customLocations]);
   const selectedArea = areaByTelegramLabel(draft.damageArea);
   const descriptionSuggestions = selectedArea?.suggestions[language] || [];
+  const computedAreaMm2 =
+    Number(draft.damageLengthMm) > 0 && Number(draft.damageWidthMm) > 0
+      ? String(Number(draft.damageLengthMm) * Number(draft.damageWidthMm))
+      : "";
+  const measurementSummary = measurementSummaryFor(draft);
 
   const update = (field: keyof ReportDraft, value: string) => {
     setDraft((current) => ({ ...current, [field]: value }));
+  };
+
+  const addPhotos = (files: FileList | null) => {
+    const incoming = Array.from(files || []);
+    if (incoming.length === 0) {
+      return;
+    }
+
+    setPhotos((current) => {
+      const nextPhotos = [...current, ...incoming].slice(0, maxPhotos);
+      if (current.length + incoming.length > maxPhotos) {
+        setError(t("new.photoLimitWarning"));
+      } else {
+        setError("");
+      }
+      return nextPhotos;
+    });
+  };
+
+  const removePhoto = (indexToRemove: number) => {
+    setPhotos((current) => current.filter((_, index) => index !== indexToRemove));
+    setError("");
   };
 
   const rememberVehicleOptions = () => {
@@ -107,6 +140,9 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
     if (step === 0) {
       rememberVehicleOptions();
     }
+    if (step === 3 && computedAreaMm2 && !draft.damageAreaMm2) {
+      update("damageAreaMm2", computedAreaMm2);
+    }
     setStep((current) => Math.min(current + 1, steps.length - 1));
   };
 
@@ -116,7 +152,7 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
   };
 
   const submitReport = async () => {
-    const validation = validateStep(4, draft, photos, t);
+    const validation = validateStep(5, draft, photos, t);
     if (validation) {
       setError(validation);
       return;
@@ -136,7 +172,7 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
       if (report.telegramStatus === "failed") {
         setError(report.telegramError || "Report saved, but Telegram sending failed.");
       }
-      setStep(5);
+      setStep(6);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Could not create report.");
     } finally {
@@ -157,7 +193,7 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
           {steps.map((label, index) => (
             <li key={label} className={index === step ? "current" : index < step ? "done" : ""}>
               <span>{index < step ? <Check size={15} /> : index + 1}</span>
-              {label}
+              {t(stepTranslationKey(label))}
             </li>
           ))}
         </ol>
@@ -288,30 +324,120 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
           )}
 
           {step === 3 && (
+            <div className="measure-layout">
+              <div className="measurement-options">
+                {[
+                  { value: "Scratch length", label: t("new.measureScratch") },
+                  { value: "Paint damage area", label: t("new.measurePaint") },
+                  { value: "Dent size", label: t("new.measureDent") },
+                  { value: "Other measurement", label: t("new.measureOther") },
+                ].map((option) => (
+                  <button
+                    key={option.value}
+                    className={draft.damageMeasurementType === option.value ? "selected" : "secondary"}
+                    onClick={() => update("damageMeasurementType", option.value)}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              <div className="form-grid">
+                <label className="field">
+                  {t("new.damageLength")}
+                  <input
+                    type="number"
+                    min="0"
+                    inputMode="decimal"
+                    value={draft.damageLengthMm || ""}
+                    onChange={(event) => update("damageLengthMm", event.target.value)}
+                    placeholder="25"
+                  />
+                </label>
+                <label className="field">
+                  {t("new.damageWidth")}
+                  <input
+                    type="number"
+                    min="0"
+                    inputMode="decimal"
+                    value={draft.damageWidthMm || ""}
+                    onChange={(event) => update("damageWidthMm", event.target.value)}
+                    placeholder="5"
+                  />
+                </label>
+                <label className="field">
+                  {t("new.damageAreaMm2")}
+                  <input
+                    type="number"
+                    min="0"
+                    inputMode="decimal"
+                    value={draft.damageAreaMm2 || computedAreaMm2}
+                    onChange={(event) => update("damageAreaMm2", event.target.value)}
+                    placeholder={computedAreaMm2 || "125"}
+                  />
+                  <small>{computedAreaMm2 ? `${t("new.damageAreaComputed")} ${computedAreaMm2} mm2` : t("new.measureHint")}</small>
+                </label>
+                <label className="field">
+                  {t("new.measureNote")}
+                  <input
+                    value={draft.damageMeasurementNote || ""}
+                    onChange={(event) => update("damageMeasurementNote", event.target.value)}
+                    placeholder={t("new.measureNotePlaceholder")}
+                  />
+                </label>
+              </div>
+            </div>
+          )}
+
+          {step === 4 && (
             <div>
-              <label className="upload-box">
-                <Upload size={26} />
-                <strong>{t("new.uploadTitle")}</strong>
-                <span>{t("new.uploadHint")}</span>
-                <input
-                  type="file"
-                  accept="image/jpeg,image/jpg,image/png"
-                  multiple
-                  onChange={(event) => setPhotos(Array.from(event.target.files || []))}
-                />
-              </label>
+              <div className="photo-actions">
+                <label className="upload-box compact">
+                  <Camera size={26} />
+                  <strong>{t("new.takePhoto")}</strong>
+                  <span>{t("new.cameraHint")}</span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png"
+                    capture="environment"
+                    onChange={(event) => {
+                      addPhotos(event.target.files);
+                      event.target.value = "";
+                    }}
+                  />
+                </label>
+                <label className="upload-box compact">
+                  <Upload size={26} />
+                  <strong>{t("new.uploadPhotos")}</strong>
+                  <span>{t("new.uploadHint")}</span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/jpg,image/png"
+                    multiple
+                    onChange={(event) => {
+                      addPhotos(event.target.files);
+                      event.target.value = "";
+                    }}
+                  />
+                </label>
+              </div>
+              <div className="photo-count">{photos.length}/{maxPhotos} {t("new.photoLimit")}</div>
               <div className="photo-grid">
-                {photoPreviews.map((photo) => (
+                {photoPreviews.map((photo, index) => (
                   <figure key={photo.url}>
                     <img src={photo.url} alt={photo.name} />
-                    <figcaption>{photo.name}</figcaption>
+                    <figcaption>
+                      <span>{photo.name}</span>
+                      <button type="button" className="icon-button remove-photo" title={t("new.removePhoto")} onClick={() => removePhoto(index)}>
+                        <Trash2 size={16} />
+                      </button>
+                    </figcaption>
                   </figure>
                 ))}
               </div>
             </div>
           )}
 
-          {step === 4 && (
+          {step === 5 && (
             <div className="review-grid">
               <ReviewRow label={t("new.reviewVin")} value={draft.vin || "-"} />
               <ReviewRow label={t("new.reviewVis")} value={vinLast8} />
@@ -320,11 +446,12 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
               <ReviewRow label={t("new.reportedBy")} value={draft.reportedBy || "-"} />
               <ReviewRow label={t("new.area")} value={selectedArea?.label[language] || draft.damageArea} />
               <ReviewRow label={t("new.damageDescription")} value={draft.damageDescription} />
-              <ReviewRow label={t("new.photos")} value={`${photos.length} attached`} />
+              <ReviewRow label={t("new.measurement")} value={measurementSummary || "-"} />
+              <ReviewRow label={t("new.photos")} value={`${photos.length}/${maxPhotos}`} />
             </div>
           )}
 
-          {step === 5 && (
+          {step === 6 && (
             <div className="send-panel">
               <Camera size={40} />
               <h2>{t("new.reportSaved")}</h2>
@@ -344,19 +471,19 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
               <ChevronLeft size={18} />
               {t("new.back")}
             </button>
-            {step < 4 && (
+            {step < 5 && (
               <button onClick={next}>
                 {t("new.continue")}
                 <ChevronRight size={18} />
               </button>
             )}
-            {step === 4 && (
+            {step === 5 && (
               <button onClick={submitReport} disabled={isSubmitting}>
                 {t("new.saveSend")}
                 <Check size={18} />
               </button>
             )}
-            {step === 5 && (
+            {step === 6 && (
               <button onClick={resetReport} disabled={!createdId}>
                 {t("nav.newReport")}
                 <ChevronRight size={18} />
@@ -424,6 +551,32 @@ function ReviewRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+function stepTranslationKey(stepLabel: string): TranslationKey {
+  const keys: Record<string, TranslationKey> = {
+    Vehicle: "step.vehicle",
+    Area: "step.area",
+    Description: "step.description",
+    Measure: "step.measure",
+    Photos: "step.photos",
+    Review: "step.review",
+    Send: "step.send",
+  };
+
+  return keys[stepLabel];
+}
+
+function measurementSummaryFor(draft: ReportDraft): string {
+  const parts = [
+    draft.damageMeasurementType,
+    draft.damageLengthMm ? `${draft.damageLengthMm} mm length` : "",
+    draft.damageWidthMm ? `${draft.damageWidthMm} mm width` : "",
+    draft.damageAreaMm2 ? `${draft.damageAreaMm2} mm2` : "",
+    draft.damageMeasurementNote,
+  ].filter(Boolean);
+
+  return parts.join(" / ");
+}
+
 function validateStep(step: number, draft: ReportDraft, photos: File[], t: (key: TranslationKey) => string): string {
   if (step === 0 && draft.vin && draft.vin.length !== 17) {
     return t("new.validateVin");
@@ -441,8 +594,12 @@ function validateStep(step: number, draft: ReportDraft, photos: File[], t: (key:
     return t("new.validateDescription");
   }
 
-  if ((step === 3 || step === 4) && photos.length === 0) {
+  if ((step === 4 || step === 5) && photos.length === 0) {
     return t("new.validatePhotos");
+  }
+
+  if ((step === 4 || step === 5) && photos.length > maxPhotos) {
+    return t("new.validatePhotoLimit");
   }
 
   return "";

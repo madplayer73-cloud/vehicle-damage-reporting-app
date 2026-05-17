@@ -101,10 +101,37 @@ function formatReport(report: Report): string {
     `Reported by: ${report.reportedBy || "-"}`,
     `Damage area: ${report.damageArea}`,
     `Description: ${report.damageDescription}`,
+    ...formatMeasurement(report),
     `Date/time: ${dateTime}`,
     "",
     "Photos attached below.",
   ].join("\n");
+}
+
+function formatMeasurement(report: Report): string[] {
+  const lines: string[] = [];
+
+  if (report.damageMeasurementType) {
+    lines.push(`Measurement type: ${report.damageMeasurementType}`);
+  }
+
+  if (report.damageLengthMm) {
+    lines.push(`Length: ${report.damageLengthMm} mm`);
+  }
+
+  if (report.damageWidthMm) {
+    lines.push(`Width: ${report.damageWidthMm} mm`);
+  }
+
+  if (report.damageAreaMm2) {
+    lines.push(`Area: ${report.damageAreaMm2} mm2`);
+  }
+
+  if (report.damageMeasurementNote) {
+    lines.push(`Measurement note: ${report.damageMeasurementNote}`);
+  }
+
+  return lines;
 }
 
 async function callTelegram(token: string, method: string, payload: Record<string, unknown>): Promise<void> {

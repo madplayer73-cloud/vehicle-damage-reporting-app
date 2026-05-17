@@ -64,6 +64,13 @@ export type TranslationKey =
   | "nav.reports"
   | "nav.settings"
   | "nav.logout"
+  | "step.vehicle"
+  | "step.area"
+  | "step.description"
+  | "step.measure"
+  | "step.photos"
+  | "step.review"
+  | "step.send"
   | "new.eyebrow"
   | "new.title"
   | "new.description"
@@ -77,8 +84,26 @@ export type TranslationKey =
   | "new.identifierConfirmed"
   | "new.area"
   | "new.damageDescription"
+  | "new.measurement"
+  | "new.measureScratch"
+  | "new.measurePaint"
+  | "new.measureDent"
+  | "new.measureOther"
+  | "new.damageLength"
+  | "new.damageWidth"
+  | "new.damageAreaMm2"
+  | "new.damageAreaComputed"
+  | "new.measureHint"
+  | "new.measureNote"
+  | "new.measureNotePlaceholder"
   | "new.uploadTitle"
+  | "new.takePhoto"
+  | "new.cameraHint"
+  | "new.uploadPhotos"
   | "new.uploadHint"
+  | "new.photoLimit"
+  | "new.photoLimitWarning"
+  | "new.removePhoto"
   | "new.reviewVin"
   | "new.reviewVis"
   | "new.brandModel"
@@ -96,6 +121,7 @@ export type TranslationKey =
   | "new.validateArea"
   | "new.validateDescription"
   | "new.validatePhotos"
+  | "new.validatePhotoLimit"
   | "reports.eyebrow"
   | "reports.title"
   | "reports.description"
@@ -135,6 +161,13 @@ export const translations: Record<Language, Record<TranslationKey, string>> = {
     "nav.reports": "Reports",
     "nav.settings": "Settings",
     "nav.logout": "Logout",
+    "step.vehicle": "Vehicle",
+    "step.area": "Area",
+    "step.description": "Description",
+    "step.measure": "Measure",
+    "step.photos": "Photos",
+    "step.review": "Review",
+    "step.send": "Send",
     "new.eyebrow": "Guided workflow",
     "new.title": "New damage report",
     "new.description": "Create one structured vehicle damage report and send it to Telegram with photos attached.",
@@ -148,15 +181,33 @@ export const translations: Record<Language, Record<TranslationKey, string>> = {
     "new.identifierConfirmed": "Vehicle identifier confirmed. Last 8 characters:",
     "new.area": "Area",
     "new.damageDescription": "Damage description",
+    "new.measurement": "Measurement",
+    "new.measureScratch": "Scratch length",
+    "new.measurePaint": "Paint damage area",
+    "new.measureDent": "Dent size",
+    "new.measureOther": "Other",
+    "new.damageLength": "Length in mm",
+    "new.damageWidth": "Width in mm",
+    "new.damageAreaMm2": "Area in mm2",
+    "new.damageAreaComputed": "Calculated area:",
+    "new.measureHint": "Use length and width for paint damage, or enter area manually.",
+    "new.measureNote": "Measurement note",
+    "new.measureNotePlaceholder": "Example: approx. 5 mm scratch",
     "new.uploadTitle": "Upload or take photos",
+    "new.takePhoto": "Take photo",
+    "new.cameraHint": "Open mobile camera.",
+    "new.uploadPhotos": "Upload photos",
     "new.uploadHint": "JPG, JPEG and PNG are supported.",
+    "new.photoLimit": "photos maximum",
+    "new.photoLimitWarning": "Maximum 10 photos can be attached. Extra photos were ignored.",
+    "new.removePhoto": "Remove photo",
     "new.reviewVin": "VIN",
     "new.reviewVis": "VIS / VIN last 8",
     "new.brandModel": "Brand/model",
     "new.photos": "Photos",
     "new.reportSaved": "Report is saved",
-    "new.savedSent": "Photos are archived in Telegram and metadata is saved in the app.",
-    "new.savedFailed": "Telegram sending needs attention; metadata is saved in the app.",
+    "new.savedSent": "The summary and photos were sent to Telegram.",
+    "new.savedFailed": "Telegram sending needs attention. Try again or check configuration.",
     "new.back": "Back",
     "new.continue": "Continue",
     "new.saveSend": "Save & send",
@@ -167,6 +218,7 @@ export const translations: Record<Language, Record<TranslationKey, string>> = {
     "new.validateArea": "Select a damaged area.",
     "new.validateDescription": "Add a damage description.",
     "new.validatePhotos": "Add at least one photo.",
+    "new.validatePhotoLimit": "Attach maximum 10 photos.",
     "reports.eyebrow": "Admin",
     "reports.title": "Report list",
     "reports.description": "Search reports by VIN, last 8 characters, brand or damaged area.",
@@ -205,6 +257,13 @@ export const translations: Record<Language, Record<TranslationKey, string>> = {
     "nav.reports": "Reporty",
     "nav.settings": "Nastavenia",
     "nav.logout": "Odhlasit",
+    "step.vehicle": "Vozidlo",
+    "step.area": "Miesto",
+    "step.description": "Popis",
+    "step.measure": "Meranie",
+    "step.photos": "Fotky",
+    "step.review": "Kontrola",
+    "step.send": "Odoslat",
     "new.eyebrow": "Riadeny proces",
     "new.title": "Novy skodovy report",
     "new.description": "Vytvor strukturovany report poskodenia vozidla a odosli ho do Telegramu s fotkami.",
@@ -218,15 +277,33 @@ export const translations: Record<Language, Record<TranslationKey, string>> = {
     "new.identifierConfirmed": "Identifikator vozidla potvrdeny. Poslednych 8 znakov:",
     "new.area": "Miesto poskodenia",
     "new.damageDescription": "Popis poskodenia",
+    "new.measurement": "Meranie",
+    "new.measureScratch": "Dlzka skrabanca",
+    "new.measurePaint": "Plocha poskodeneho laku",
+    "new.measureDent": "Velkost preliaciny",
+    "new.measureOther": "Ine",
+    "new.damageLength": "Dlzka v mm",
+    "new.damageWidth": "Sirka v mm",
+    "new.damageAreaMm2": "Plocha v mm2",
+    "new.damageAreaComputed": "Vypocitana plocha:",
+    "new.measureHint": "Pri laku zadaj dlzku a sirku, alebo plochu dopln rucne.",
+    "new.measureNote": "Poznamka k meraniu",
+    "new.measureNotePlaceholder": "Napriklad: skrabanec cca 5 mm",
     "new.uploadTitle": "Nahraj alebo odfot fotky",
+    "new.takePhoto": "Odfotit",
+    "new.cameraHint": "Otvori fotak v mobile.",
+    "new.uploadPhotos": "Nahrat fotky",
     "new.uploadHint": "Podporovane su JPG, JPEG a PNG.",
+    "new.photoLimit": "fotiek maximum",
+    "new.photoLimitWarning": "Maximum je 10 fotiek. Fotky nad limit boli ignorovane.",
+    "new.removePhoto": "Odstranit fotku",
     "new.reviewVin": "VIN",
     "new.reviewVis": "VIS / poslednych 8 z VIN",
     "new.brandModel": "Znacka/model",
     "new.photos": "Fotky",
     "new.reportSaved": "Report je ulozeny",
-    "new.savedSent": "Fotky su archivovane v Telegrame a metadata su ulozene v aplikacii.",
-    "new.savedFailed": "Odoslanie do Telegramu vyzaduje kontrolu; metadata su ulozene v aplikacii.",
+    "new.savedSent": "Suhrn a fotky boli odoslane do Telegramu.",
+    "new.savedFailed": "Odoslanie do Telegramu vyzaduje kontrolu. Skus znova alebo skontroluj konfiguraciu.",
     "new.back": "Spat",
     "new.continue": "Pokracovat",
     "new.saveSend": "Ulozit a odoslat",
@@ -237,6 +314,7 @@ export const translations: Record<Language, Record<TranslationKey, string>> = {
     "new.validateArea": "Vyber miesto poskodenia.",
     "new.validateDescription": "Dopln popis poskodenia.",
     "new.validatePhotos": "Pridaj aspon jednu fotku.",
+    "new.validatePhotoLimit": "Pridaj maximalne 10 fotiek.",
     "reports.eyebrow": "Admin",
     "reports.title": "Zoznam reportov",
     "reports.description": "Vyhladavanie podla VIN, poslednych 8 znakov, znacky alebo miesta poskodenia.",
@@ -275,6 +353,13 @@ export const translations: Record<Language, Record<TranslationKey, string>> = {
     "nav.reports": "Riportok",
     "nav.settings": "Beallitasok",
     "nav.logout": "Kilepes",
+    "step.vehicle": "Jarmu",
+    "step.area": "Resz",
+    "step.description": "Leiras",
+    "step.measure": "Meres",
+    "step.photos": "Fotok",
+    "step.review": "Ellenorzes",
+    "step.send": "Kuldes",
     "new.eyebrow": "Vezetett folyamat",
     "new.title": "Uj karjelentes",
     "new.description": "Hozz letre strukturalt jarmu karjelentest es kuldd el Telegramra fotokkal.",
@@ -288,15 +373,33 @@ export const translations: Record<Language, Record<TranslationKey, string>> = {
     "new.identifierConfirmed": "Jarmu azonosito megerositve. Utolso 8 karakter:",
     "new.area": "Sérült resz",
     "new.damageDescription": "Kar leirasa",
+    "new.measurement": "Meres",
+    "new.measureScratch": "Karcolas hossza",
+    "new.measurePaint": "Fenyezes serules terulete",
+    "new.measureDent": "Horpadas merete",
+    "new.measureOther": "Egyeb",
+    "new.damageLength": "Hossz mm-ben",
+    "new.damageWidth": "Szelesseg mm-ben",
+    "new.damageAreaMm2": "Terulet mm2-ben",
+    "new.damageAreaComputed": "Szamitott terulet:",
+    "new.measureHint": "Fenyezesnel add meg a hosszt es szelesseget, vagy ird be kezzel.",
+    "new.measureNote": "Meresi megjegyzes",
+    "new.measureNotePlaceholder": "Pelda: kb. 5 mm karcolas",
     "new.uploadTitle": "Fotok feltoltese vagy keszitese",
+    "new.takePhoto": "Foto keszitese",
+    "new.cameraHint": "Mobil kamera megnyitasa.",
+    "new.uploadPhotos": "Fotok feltoltese",
     "new.uploadHint": "JPG, JPEG es PNG tamogatott.",
+    "new.photoLimit": "foto maximum",
+    "new.photoLimitWarning": "Maximum 10 foto csatolhato. A tobbi foto kihagyva.",
+    "new.removePhoto": "Foto torlese",
     "new.reviewVin": "VIN",
     "new.reviewVis": "VIS / VIN utolso 8",
     "new.brandModel": "Marka/modell",
     "new.photos": "Fotok",
     "new.reportSaved": "Riport elmentve",
-    "new.savedSent": "A fotok Telegramban vannak archivalva, a metaadatok az appban elmentve.",
-    "new.savedFailed": "A Telegram kuldest ellenorizni kell; a metaadatok elmentve.",
+    "new.savedSent": "Az osszegzes es a fotok elkuldve Telegramra.",
+    "new.savedFailed": "A Telegram kuldest ellenorizni kell. Probald ujra vagy ellenorizd a beallitast.",
     "new.back": "Vissza",
     "new.continue": "Tovabb",
     "new.saveSend": "Mentes es kuldes",
@@ -307,6 +410,7 @@ export const translations: Record<Language, Record<TranslationKey, string>> = {
     "new.validateArea": "Valassz serult reszt.",
     "new.validateDescription": "Add meg a kar leirasat.",
     "new.validatePhotos": "Adj hozza legalabb egy fotot.",
+    "new.validatePhotoLimit": "Maximum 10 fotot adj hozza.",
     "reports.eyebrow": "Admin",
     "reports.title": "Riport lista",
     "reports.description": "Kereses VIN, utolso 8 karakter, marka vagy serult resz alapjan.",

@@ -72,6 +72,11 @@ function parseInput(form: FormData): ReportInput {
     reportedBy: String(form.get("reportedBy") || "").trim(),
     damageArea: String(form.get("damageArea") || "").trim(),
     damageDescription: String(form.get("damageDescription") || "").trim(),
+    damageMeasurementType: String(form.get("damageMeasurementType") || "").trim(),
+    damageLengthMm: String(form.get("damageLengthMm") || "").trim(),
+    damageWidthMm: String(form.get("damageWidthMm") || "").trim(),
+    damageAreaMm2: String(form.get("damageAreaMm2") || "").trim(),
+    damageMeasurementNote: String(form.get("damageMeasurementNote") || "").trim(),
   };
 }
 
@@ -89,6 +94,11 @@ function buildReport(input: ReportInput, photos: TelegramPhotoUpload[], telegram
     reportedBy: input.reportedBy,
     damageArea: input.damageArea,
     damageDescription: input.damageDescription,
+    damageMeasurementType: input.damageMeasurementType,
+    damageLengthMm: input.damageLengthMm,
+    damageWidthMm: input.damageWidthMm,
+    damageAreaMm2: input.damageAreaMm2,
+    damageMeasurementNote: input.damageMeasurementNote,
     timestamp,
     photos: toReportPhotos(photos),
     telegramStatus,
@@ -143,6 +153,10 @@ function validateInput(input: ReportInput): string | undefined {
 function validatePhotos(photos: File[]): string | undefined {
   if (photos.length === 0) {
     return "At least one JPG or PNG photo is required.";
+  }
+
+  if (photos.length > 10) {
+    return "Maximum 10 photos are allowed.";
   }
 
   const unsupported = photos.find((photo) => !allowedPhotoTypes.has(photo.type));

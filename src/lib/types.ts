@@ -11,6 +11,11 @@ export type Report = {
   reportedBy: string;
   damageArea: string;
   damageDescription: string;
+  damageMeasurementType?: string;
+  damageLengthMm?: string;
+  damageWidthMm?: string;
+  damageAreaMm2?: string;
+  damageMeasurementNote?: string;
   timestamp: string;
   photos: ReportPhoto[];
   telegramStatus: TelegramStatus;

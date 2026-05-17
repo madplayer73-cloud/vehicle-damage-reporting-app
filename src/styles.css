@@ -391,6 +391,28 @@ small {
   text-align: left;
 }
 
+.measure-layout {
+  display: grid;
+  gap: 18px;
+}
+
+.measurement-options,
+.photo-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+}
+
+.measurement-options button {
+  justify-content: flex-start;
+  padding: 0 14px;
+}
+
+.measurement-options button.selected {
+  background: #0f5f8f;
+  color: #fff;
+}
+
 .upload-box {
   display: grid;
   place-items: center;
@@ -419,6 +441,16 @@ small {
 
 .upload-box span {
   color: #677989;
+}
+
+.photo-count {
+  margin-top: 12px;
+  color: #50616f;
+  font-weight: 800;
+}
+
+:root[data-theme="dark"] .photo-count {
+  color: #9fb2c0;
 }
 
 :root[data-theme="dark"] .upload-box span {
@@ -456,10 +488,27 @@ small {
 }
 
 .photo-grid figcaption {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   padding: 8px;
   color: #556674;
   font-size: 0.82rem;
   overflow-wrap: anywhere;
+}
+
+.photo-grid figcaption span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.remove-photo {
+  width: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  background: #ffe3de;
+  color: #a93226;
 }
 
 .ocr-preview {

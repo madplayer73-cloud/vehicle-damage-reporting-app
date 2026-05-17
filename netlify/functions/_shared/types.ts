@@ -19,6 +19,11 @@ export type Report = {
   reportedBy: string;
   damageArea: string;
   damageDescription: string;
+  damageMeasurementType?: string;
+  damageLengthMm?: string;
+  damageWidthMm?: string;
+  damageAreaMm2?: string;
+  damageMeasurementNote?: string;
   timestamp: string;
   photos: ReportPhoto[];
   telegramStatus: TelegramStatus;
@@ -34,6 +39,11 @@ export type ReportInput = {
   reportedBy: string;
   damageArea: string;
   damageDescription: string;
+  damageMeasurementType: string;
+  damageLengthMm: string;
+  damageWidthMm: string;
+  damageAreaMm2: string;
+  damageMeasurementNote: string;
 };
 
 export const allowedPhotoTypes = new Set(["image/jpeg", "image/jpg", "image/png"]);
