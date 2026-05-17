@@ -1,10 +1,9 @@
 import { useMemo, useState } from "react";
-import { Camera, Check, ChevronLeft, ChevronRight, ImagePlus, ScanLine, Trash2, Upload } from "lucide-react";
+import { Camera, Check, ChevronLeft, ChevronRight, ScanLine, Trash2, Upload } from "lucide-react";
 import { createReport, getUserName } from "../lib/api";
 import { type ReportDraft, type TelegramStatus } from "../lib/types";
 import { PageHeader } from "../components/PageHeader";
 import { VinScanner } from "../components/VinScanner";
-import { VinOcrReader } from "../components/VinOcrReader";
 import { usePreferences, type TranslationKey } from "../lib/preferences";
 import { REPORT_LOCATIONS, VEHICLE_BRANDS, VEHICLE_MODELS_BY_BRAND } from "../data/vehicleData";
 import { areaByTelegramLabel, DAMAGE_AREAS } from "../data/damageAreas";
@@ -54,7 +53,6 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
   const [scanWarning, setScanWarning] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
-  const [isOcrOpen, setIsOcrOpen] = useState(false);
   const [customBrands, setCustomBrands] = useState<string[]>(() => getCustomBrands());
   const [customLocations, setCustomLocations] = useState<string[]>(() => getCustomLocations());
   const [customModelsByBrand, setCustomModelsByBrand] = useState<Record<string, string[]>>(() => getCustomModelsByBrand());
@@ -219,7 +217,7 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
             <div className="form-grid">
               <label className="field wide">
                 {t("new.fullVin")}
-                <div className="input-action">
+                <div className="input-action single-action">
                   <input
                     value={draft.vin}
                     maxLength={17}
@@ -228,9 +226,6 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
                   />
                   <button type="button" className="icon-button" title="Scan VIN barcode or QR" onClick={() => setIsScannerOpen(true)}>
                     <ScanLine size={20} />
-                  </button>
-                  <button type="button" className="icon-button" title="Read VIN from photo" onClick={() => setIsOcrOpen(true)}>
-                    <ImagePlus size={20} />
                   </button>
                 </div>
                 <small>{draft.vin.length}/17 characters</small>
@@ -528,29 +523,6 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
               update("vinLast8Input", result.value);
               setScanWarning("");
               setIsScannerOpen(false);
-              return;
-            }
-
-            setScanWarning(t("new.scanWarning"));
-          }}
-        />
-      )}
-      {isOcrOpen && (
-        <VinOcrReader
-          onClose={() => setIsOcrOpen(false)}
-          onDetected={(result) => {
-            if (result.kind === "vin") {
-              update("vin", result.value);
-              update("vinLast8Input", result.value.slice(-8));
-              setScanWarning("");
-              setIsOcrOpen(false);
-              return;
-            }
-
-            if (result.kind === "vis") {
-              update("vinLast8Input", result.value);
-              setScanWarning("");
-              setIsOcrOpen(false);
               return;
             }
 
