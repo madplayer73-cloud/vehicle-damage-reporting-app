@@ -50,6 +50,7 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
   const [createdStatus, setCreatedStatus] = useState<TelegramStatus>("pending");
   const [error, setError] = useState("");
   const [photoNotice, setPhotoNotice] = useState("");
+  const [isPreparingPhotos, setIsPreparingPhotos] = useState(false);
   const [scanWarning, setScanWarning] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
@@ -81,21 +82,30 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
     setDraft((current) => ({ ...current, [field]: value }));
   };
 
-  const addPhotos = (files: FileList | null) => {
+  const addPhotos = async (files: FileList | null) => {
     const incoming = Array.from(files || []);
     if (incoming.length === 0) {
       return;
     }
 
-    setPhotos((current) => {
-      const nextPhotos = [...current, ...incoming];
-      if (nextPhotos.length > recommendedPhotoCount) {
-        setPhotoNotice(t("new.photoRecommendation"));
-      } else {
-        setPhotoNotice("");
-      }
-      return nextPhotos;
-    });
+    setIsPreparingPhotos(true);
+    setError("");
+
+    try {
+      const preparedPhotos = await Promise.all(incoming.map(preparePhotoForUpload));
+
+      setPhotos((current) => {
+        const nextPhotos = [...current, ...preparedPhotos];
+        if (nextPhotos.length > recommendedPhotoCount) {
+          setPhotoNotice(t("new.photoRecommendation"));
+        } else {
+          setPhotoNotice("");
+        }
+        return nextPhotos;
+      });
+    } finally {
+      setIsPreparingPhotos(false);
+    }
   };
 
   const removePhoto = (indexToRemove: number) => {
@@ -405,8 +415,8 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
                     type="file"
                     accept="image/jpeg,image/jpg,image/png"
                     capture="environment"
-                    onChange={(event) => {
-                      addPhotos(event.target.files);
+                    onChange={async (event) => {
+                      await addPhotos(event.target.files);
                       event.target.value = "";
                     }}
                   />
@@ -419,8 +429,8 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
                     type="file"
                     accept="image/jpeg,image/jpg,image/png"
                     multiple
-                    onChange={(event) => {
-                      addPhotos(event.target.files);
+                    onChange={async (event) => {
+                      await addPhotos(event.target.files);
                       event.target.value = "";
                     }}
                   />
@@ -429,6 +439,7 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
               <div className="photo-count">
                 {photos.length} {t("new.photosSelected")} {photos.length > recommendedPhotoCount ? t("new.photoRecommendedCount") : ""}
               </div>
+              {isPreparingPhotos && <div className="warning-box">{t("new.preparingPhotos")}</div>}
               {photoNotice && <div className="warning-box">{photoNotice}</div>}
               <div className="photo-grid">
                 {photoPreviews.map((photo, index) => (
@@ -481,7 +492,7 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
               {t("new.back")}
             </button>
             {step < 5 && (
-              <button onClick={next}>
+              <button onClick={next} disabled={isPreparingPhotos}>
                 {t("new.continue")}
                 <ChevronRight size={18} />
               </button>
@@ -584,6 +595,65 @@ function measurementSummaryFor(draft: ReportDraft): string {
   ].filter(Boolean);
 
   return parts.join(" / ");
+}
+
+async function preparePhotoForUpload(photo: File): Promise<File> {
+  if (!photo.type.startsWith("image/")) {
+    return photo;
+  }
+
+  const imageUrl = URL.createObjectURL(photo);
+
+  try {
+    const image = await loadImage(imageUrl);
+    const maxSide = 1600;
+    const scale = Math.min(1, maxSide / Math.max(image.naturalWidth, image.naturalHeight));
+
+    if (scale === 1 && photo.size <= 1_200_000 && photo.type === "image/jpeg") {
+      return photo;
+    }
+
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+    canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      return photo;
+    }
+
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const blob = await canvasToBlob(canvas, "image/jpeg", 0.78);
+    const filename = photo.name.replace(/\.[^.]+$/, "") || "photo";
+
+    return new File([blob], `${filename}.jpg`, { type: "image/jpeg", lastModified: Date.now() });
+  } catch {
+    return photo;
+  } finally {
+    URL.revokeObjectURL(imageUrl);
+  }
+}
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = reject;
+    image.src = src;
+  });
+}
+
+function canvasToBlob(canvas: HTMLCanvasElement, type: string, quality: number): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) {
+        resolve(blob);
+        return;
+      }
+
+      reject(new Error("Could not compress photo."));
+    }, type, quality);
+  });
 }
 
 function validateStep(step: number, draft: ReportDraft, photos: File[], t: (key: TranslationKey) => string): string {

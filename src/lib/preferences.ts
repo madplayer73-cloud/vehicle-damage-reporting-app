@@ -105,6 +105,7 @@ export type TranslationKey =
   | "new.photoRecommendation"
   | "new.photoRecommendedCount"
   | "new.photosSelected"
+  | "new.preparingPhotos"
   | "new.removePhoto"
   | "new.reviewVin"
   | "new.reviewVis"
@@ -203,6 +204,7 @@ export const translations: Record<Language, Record<TranslationKey, string>> = {
     "new.photoRecommendation": "Recommended count for one vehicle is up to 10 photos. More photos will still be sent to Telegram in albums.",
     "new.photoRecommendedCount": "(recommended up to 10)",
     "new.photosSelected": "photos selected",
+    "new.preparingPhotos": "Preparing photos for Telegram...",
     "new.removePhoto": "Remove photo",
     "new.reviewVin": "VIN",
     "new.reviewVis": "VIS / VIN last 8",
@@ -300,6 +302,7 @@ export const translations: Record<Language, Record<TranslationKey, string>> = {
     "new.photoRecommendation": "Odporucany pocet pre jedno vozidlo je do 10 fotiek. Viac fotiek sa aj tak odosle do Telegramu po albumoch.",
     "new.photoRecommendedCount": "(odporucane do 10)",
     "new.photosSelected": "fotiek vybranych",
+    "new.preparingPhotos": "Pripravujem fotky pre Telegram...",
     "new.removePhoto": "Odstranit fotku",
     "new.reviewVin": "VIN",
     "new.reviewVis": "VIS / poslednych 8 z VIN",
@@ -397,6 +400,7 @@ export const translations: Record<Language, Record<TranslationKey, string>> = {
     "new.photoRecommendation": "Egy jarmuhoz ajanlott legfeljebb 10 foto. Tobbet is elkuldunk Telegramra albumokban.",
     "new.photoRecommendedCount": "(ajanlott legfeljebb 10)",
     "new.photosSelected": "foto kivalasztva",
+    "new.preparingPhotos": "Fotok elokeszitese Telegramhoz...",
     "new.removePhoto": "Foto torlese",
     "new.reviewVin": "VIN",
     "new.reviewVis": "VIS / VIN utolso 8",
