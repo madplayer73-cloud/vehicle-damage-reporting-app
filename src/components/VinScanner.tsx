@@ -1,17 +1,14 @@
 import { useEffect, useId, useRef, useState } from "react";
 import type { Html5Qrcode as Html5QrcodeScanner } from "html5-qrcode";
 import { X } from "lucide-react";
+import { detectVehicleIdentifier, type IdentifierResult } from "../lib/vinParsing";
 
 type VinScannerProps = {
   onDetected: (result: ScanResult) => void;
   onClose: () => void;
 };
 
-export type ScanResult = {
-  kind: "vin" | "vis" | "unknown";
-  value: string;
-  rawValue: string;
-};
+export type ScanResult = IdentifierResult;
 
 export function VinScanner({ onDetected, onClose }: VinScannerProps) {
   const scannerId = useId().replaceAll(":", "");
@@ -65,18 +62,15 @@ export function VinScanner({ onDetected, onClose }: VinScannerProps) {
             lastScanRef.current = { text: decodedText, at: now };
 
             notifyScan();
-            const normalized = normalizeCode(decodedText);
-            const vin = extractVin(normalized);
-            const vis = extractVis(normalized);
+            const result = detectVehicleIdentifier(decodedText);
+            const normalized = result.value || decodedText;
 
             setScannedText(normalized || decodedText);
 
-            if (vin) {
-              onDetected({ kind: "vin", value: vin, rawValue: decodedText });
-            } else if (vis) {
-              onDetected({ kind: "vis", value: vis, rawValue: decodedText });
+            if (result.kind !== "unknown") {
+              onDetected(result);
             } else {
-              onDetected({ kind: "unknown", value: normalized, rawValue: decodedText });
+              onDetected(result);
               setError(
                 `Code was scanned (${normalized.length} characters), but it is not VIN or VIS. For a correct damage report, scan or enter VIN or VIS manually.`,
               );
@@ -149,22 +143,4 @@ function notifyScan(): void {
 
 function getWebkitAudioContext(): typeof AudioContext | undefined {
   return (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-}
-
-function normalizeCode(decodedText: string): string {
-  return decodedText.toUpperCase().replace(/[^A-Z0-9]/g, "");
-}
-
-function extractVin(normalized: string): string {
-  const match = normalized.match(/[A-HJ-NPR-Z0-9]{17}/);
-  return match ? match[0] : "";
-}
-
-function extractVis(normalized: string): string {
-  if (normalized.length === 8) {
-    return normalized;
-  }
-
-  const match = normalized.match(/[A-HJ-NPR-Z0-9]{8}$/);
-  return match ? match[0] : "";
 }
