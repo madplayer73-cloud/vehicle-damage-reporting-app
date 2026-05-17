@@ -2,9 +2,14 @@ import type { Config, Context } from "@netlify/functions";
 import { allowedPhotoTypes, type ReportInput } from "./_shared/types";
 import { createReport, getReport, listReports } from "./_shared/storage";
 import { error, json } from "./_shared/response";
+import { hasValidAccessCode } from "./_shared/auth";
 
 export default async (req: Request, context: Context) => {
   try {
+    if (!hasValidAccessCode(req)) {
+      return error("Invalid access code.", 401);
+    }
+
     if (req.method === "GET" && context.params.id) {
       const report = await getReport(context.params.id);
       return report ? json(report) : error("Report not found.", 404);

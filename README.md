@@ -38,11 +38,14 @@ Set:
 ```bash
 TELEGRAM_BOT_TOKEN=your_bot_token
 TELEGRAM_CHAT_ID=your_chat_id
+APP_ACCESS_CODE=choose-a-shared-access-code
 REPORT_STORAGE_DRIVER=local
 REPORT_STORAGE_DIR=./local-data
 ```
 
 Secrets must stay in `.env` or Netlify environment variables. Do not commit real tokens.
+
+`APP_ACCESS_CODE` protects the app and API routes with a simple shared access code for the MVP. Give this code only to users who should create or view damage reports.
 
 ## Create a Telegram Bot
 
@@ -72,6 +75,8 @@ For a group:
 2. Send a message in the group.
 3. Open the same `getUpdates` URL.
 4. Use the group `chat.id`, which usually starts with `-`.
+
+For multiple users sending reports into the same place, use a Telegram group and set `TELEGRAM_CHAT_ID` to the group chat ID.
 
 ## Test Sending a Report
 

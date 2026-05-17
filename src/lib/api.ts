@@ -1,5 +1,27 @@
 import type { Report } from "./types";
 
+const accessCodeKey = "vehicle-damage-access-code";
+
+export function getAccessCode(): string {
+  return window.sessionStorage.getItem(accessCodeKey) || "";
+}
+
+export function saveAccessCode(accessCode: string): void {
+  window.sessionStorage.setItem(accessCodeKey, accessCode);
+}
+
+export function clearAccessCode(): void {
+  window.sessionStorage.removeItem(accessCodeKey);
+}
+
+export async function verifyAccessCode(accessCode: string): Promise<void> {
+  const response = await fetch("/api/auth", {
+    method: "POST",
+    headers: accessHeaders(accessCode),
+  });
+  await parseResponse(response);
+}
+
 async function parseResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const message = await response.text();
@@ -9,19 +31,28 @@ async function parseResponse<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+function accessHeaders(accessCode = getAccessCode()): HeadersInit {
+  return accessCode ? { "x-access-code": accessCode } : {};
+}
+
 export async function listReports(): Promise<Report[]> {
-  const response = await fetch("/api/reports");
+  const response = await fetch("/api/reports", {
+    headers: accessHeaders(),
+  });
   return parseResponse<Report[]>(response);
 }
 
 export async function getReport(reportId: string): Promise<Report> {
-  const response = await fetch(`/api/reports/${encodeURIComponent(reportId)}`);
+  const response = await fetch(`/api/reports/${encodeURIComponent(reportId)}`, {
+    headers: accessHeaders(),
+  });
   return parseResponse<Report>(response);
 }
 
 export async function createReport(formData: FormData): Promise<Report> {
   const response = await fetch("/api/reports", {
     method: "POST",
+    headers: accessHeaders(),
     body: formData,
   });
   return parseResponse<Report>(response);
@@ -30,6 +61,7 @@ export async function createReport(formData: FormData): Promise<Report> {
 export async function sendReport(reportId: string): Promise<Report> {
   const response = await fetch(`/api/reports/${encodeURIComponent(reportId)}/send`, {
     method: "POST",
+    headers: accessHeaders(),
   });
   return parseResponse<Report>(response);
 }

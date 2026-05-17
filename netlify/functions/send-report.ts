@@ -2,10 +2,15 @@ import type { Config, Context } from "@netlify/functions";
 import { getReport, updateReport } from "./_shared/storage";
 import { error, json } from "./_shared/response";
 import { sendReportToTelegram } from "./_shared/telegram";
+import { hasValidAccessCode } from "./_shared/auth";
 
 export default async (req: Request, context: Context) => {
   if (req.method !== "POST") {
     return error("Method not allowed.", 405);
+  }
+
+  if (!hasValidAccessCode(req)) {
+    return error("Invalid access code.", 401);
   }
 
   const reportId = context.params.id;

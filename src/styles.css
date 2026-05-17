@@ -469,6 +469,39 @@ small {
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
 }
 
+.login-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: 24px;
+  background: #132330;
+}
+
+.login-panel {
+  display: grid;
+  width: min(440px, 100%);
+  gap: 18px;
+  border: 1px solid #d6e0e7;
+  border-radius: 8px;
+  background: #fff;
+  padding: 28px;
+  box-shadow: 0 24px 60px rgb(0 0 0 / 0.24);
+}
+
+.login-panel h1 {
+  margin: 0 0 8px;
+  color: #101820;
+  font-size: 1.65rem;
+  line-height: 1.12;
+  letter-spacing: 0;
+}
+
+.login-panel p {
+  margin: 0;
+  color: #50616f;
+  line-height: 1.5;
+}
+
 @media (max-width: 920px) {
   .app-shell,
   .wizard-layout,

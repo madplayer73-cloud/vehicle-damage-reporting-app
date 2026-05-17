@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
-import { ClipboardList, FilePlus2, Settings } from "lucide-react";
+import { ClipboardList, FilePlus2, LogOut, Settings } from "lucide-react";
 import { NewReportPage } from "./pages/NewReportPage";
 import { ReportsPage } from "./pages/ReportsPage";
 import { ReportDetailPage } from "./pages/ReportDetailPage";
+import { LoginPage } from "./pages/LoginPage";
+import { clearAccessCode, getAccessCode } from "./lib/api";
 
 type Route =
   | { name: "new-report" }
@@ -11,6 +13,7 @@ type Route =
 
 export function App() {
   const [path, setPath] = useState(window.location.pathname);
+  const [isAuthenticated, setIsAuthenticated] = useState(Boolean(getAccessCode()));
 
   useEffect(() => {
     const onPopState = () => setPath(window.location.pathname);
@@ -36,6 +39,15 @@ export function App() {
     setPath(nextPath);
   };
 
+  const logout = () => {
+    clearAccessCode();
+    setIsAuthenticated(false);
+  };
+
+  if (!isAuthenticated) {
+    return <LoginPage onAuthenticated={() => setIsAuthenticated(true)} />;
+  }
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
@@ -59,6 +71,10 @@ export function App() {
           <button disabled title="Telegram is configured through environment variables.">
             <Settings size={18} />
             Settings
+          </button>
+          <button onClick={logout}>
+            <LogOut size={18} />
+            Logout
           </button>
         </nav>
       </aside>
