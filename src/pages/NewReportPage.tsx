@@ -6,6 +6,15 @@ import { PageHeader } from "../components/PageHeader";
 import { VinScanner } from "../components/VinScanner";
 import { usePreferences, type TranslationKey } from "../lib/preferences";
 import { REPORT_LOCATIONS, VEHICLE_BRANDS, VEHICLE_MODELS_BY_BRAND } from "../data/vehicleData";
+import {
+  getCustomBrands,
+  getCustomLocations,
+  getCustomModelsByBrand,
+  mergeOptions,
+  saveCustomBrand,
+  saveCustomLocation,
+  saveCustomModel,
+} from "../lib/customVehicleOptions";
 
 type NewReportPageProps = {
   onCreated?: (reportId: string) => void;
@@ -35,16 +44,41 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
   const [scanWarning, setScanWarning] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [customBrands, setCustomBrands] = useState<string[]>(() => getCustomBrands());
+  const [customLocations, setCustomLocations] = useState<string[]>(() => getCustomLocations());
+  const [customModelsByBrand, setCustomModelsByBrand] = useState<Record<string, string[]>>(() => getCustomModelsByBrand());
 
   const vinLast8 = draft.vin.length === 17 ? draft.vin.slice(-8).toUpperCase() : draft.vinLast8Input || "";
   const photoPreviews = useMemo(
     () => photos.map((photo) => ({ name: photo.name, url: URL.createObjectURL(photo) })),
     [photos],
   );
-  const modelOptions = VEHICLE_MODELS_BY_BRAND[draft.brand] || [];
+  const brandOptions = useMemo(() => mergeOptions(VEHICLE_BRANDS, customBrands), [customBrands]);
+  const modelOptions = useMemo(
+    () => mergeOptions(VEHICLE_MODELS_BY_BRAND[draft.brand] || [], customModelsByBrand[draft.brand] || []),
+    [customModelsByBrand, draft.brand],
+  );
+  const locationOptions = useMemo(() => mergeOptions(REPORT_LOCATIONS, customLocations), [customLocations]);
 
   const update = (field: keyof ReportDraft, value: string) => {
     setDraft((current) => ({ ...current, [field]: value }));
+  };
+
+  const rememberVehicleOptions = () => {
+    if (draft.brand.trim()) {
+      saveCustomBrand(draft.brand);
+      setCustomBrands(getCustomBrands());
+    }
+
+    if (draft.brand.trim() && draft.model.trim()) {
+      saveCustomModel(draft.brand, draft.model);
+      setCustomModelsByBrand(getCustomModelsByBrand());
+    }
+
+    if (draft.location.trim()) {
+      saveCustomLocation(draft.location);
+      setCustomLocations(getCustomLocations());
+    }
   };
 
   const resetReport = () => {
@@ -65,6 +99,9 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
     }
 
     setError("");
+    if (step === 0) {
+      rememberVehicleOptions();
+    }
     setStep((current) => Math.min(current + 1, steps.length - 1));
   };
 
@@ -85,6 +122,7 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
 
     try {
       const form = new FormData();
+      rememberVehicleOptions();
       Object.entries(draft).forEach(([key, value]) => form.append(key, value));
       photos.forEach((photo) => form.append("photos", photo));
       const report = await createReport(form);
@@ -153,27 +191,33 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
                 <input
                   value={draft.brand}
                   onChange={(event) => update("brand", event.target.value)}
+                  onBlur={rememberVehicleOptions}
                   placeholder="Peugeot"
                   list="vehicle-brand-options"
                 />
+                <small>{t("new.customInputHint")}</small>
               </label>
               <label className="field">
                 {t("new.model")}
                 <input
                   value={draft.model}
                   onChange={(event) => update("model", event.target.value)}
+                  onBlur={rememberVehicleOptions}
                   placeholder="308 SW"
                   list="vehicle-model-options"
                 />
+                <small>{t("new.customInputHint")}</small>
               </label>
               <label className="field">
                 {t("new.location")}
                 <input
                   value={draft.location}
                   onChange={(event) => update("location", event.target.value)}
+                  onBlur={rememberVehicleOptions}
                   placeholder="CEVA Hub Trnava"
                   list="report-location-options"
                 />
+                <small>{t("new.customInputHint")}</small>
               </label>
               <label className="field">
                 {t("new.reportedBy")}
@@ -181,7 +225,7 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
               </label>
               {vinLast8.length === 8 && <div className="confirmation">{t("new.identifierConfirmed")} {vinLast8}</div>}
               <datalist id="vehicle-brand-options">
-                {VEHICLE_BRANDS.map((brand) => (
+                {brandOptions.map((brand) => (
                   <option key={brand} value={brand} />
                 ))}
               </datalist>
@@ -191,7 +235,7 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
                 ))}
               </datalist>
               <datalist id="report-location-options">
-                {REPORT_LOCATIONS.map((location) => (
+                {locationOptions.map((location) => (
                   <option key={location} value={location} />
                 ))}
               </datalist>

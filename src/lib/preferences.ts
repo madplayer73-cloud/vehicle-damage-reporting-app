@@ -70,6 +70,7 @@ export type TranslationKey =
   | "new.fullVin"
   | "new.vis"
   | "new.brand"
+  | "new.customInputHint"
   | "new.model"
   | "new.location"
   | "new.reportedBy"
@@ -140,6 +141,7 @@ export const translations: Record<Language, Record<TranslationKey, string>> = {
     "new.fullVin": "Full VIN",
     "new.vis": "VIS / VIN last 8",
     "new.brand": "Brand",
+    "new.customInputHint": "Start typing to search, or enter a new value manually.",
     "new.model": "Model",
     "new.location": "Location",
     "new.reportedBy": "Reported by",
@@ -209,6 +211,7 @@ export const translations: Record<Language, Record<TranslationKey, string>> = {
     "new.fullVin": "Cely VIN",
     "new.vis": "VIS / poslednych 8 z VIN",
     "new.brand": "Znacka",
+    "new.customInputHint": "Zacni pisat pre vyhladavanie, alebo zadaj novu hodnotu rucne.",
     "new.model": "Model",
     "new.location": "Lokalita",
     "new.reportedBy": "Nahlasil",
@@ -278,6 +281,7 @@ export const translations: Record<Language, Record<TranslationKey, string>> = {
     "new.fullVin": "Teljes VIN",
     "new.vis": "VIS / VIN utolso 8",
     "new.brand": "Marka",
+    "new.customInputHint": "Kezdj el gepelni a kereseshez, vagy adj meg uj erteket kezzel.",
     "new.model": "Modell",
     "new.location": "Helyszin",
     "new.reportedBy": "Jelentette",
