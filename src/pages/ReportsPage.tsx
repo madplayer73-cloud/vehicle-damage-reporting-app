@@ -65,7 +65,7 @@ export function ReportsPage({ onOpen }: ReportsPageProps) {
       <div className="table-card">
         <div className="table-header">
           <span>Report ID</span>
-          <span>VIN last 8</span>
+          <span>VIS / last 8</span>
           <span>Vehicle</span>
           <span>Area</span>
           <span>Status</span>

@@ -1,8 +1,9 @@
 import type { Config, Context } from "@netlify/functions";
 import { allowedPhotoTypes, type ReportInput } from "./_shared/types";
-import { createReport, getReport, listReports } from "./_shared/storage";
+import { createReport, getReport, listReports, updateReport } from "./_shared/storage";
 import { error, json } from "./_shared/response";
 import { hasValidAccessCode } from "./_shared/auth";
+import { sendReportToTelegram, toReportPhotos, type TelegramPhotoUpload } from "./_shared/telegram";
 
 export default async (req: Request, context: Context) => {
   try {
@@ -35,7 +36,22 @@ export default async (req: Request, context: Context) => {
         return error(photoError, 422);
       }
 
-      return json(await createReport(input, photos), 201);
+      const telegramPhotos = await toTelegramUploads(photos);
+      const pendingReport = await createReport(input, toReportPhotos(telegramPhotos), "pending");
+
+      try {
+        await sendReportToTelegram(pendingReport, telegramPhotos);
+        return json(await updateReport({ ...pendingReport, telegramStatus: "sent", telegramError: undefined }), 201);
+      } catch (sendError) {
+        return json(
+          await updateReport({
+            ...pendingReport,
+            telegramStatus: "failed",
+            telegramError: sendError instanceof Error ? sendError.message : "Telegram send failed.",
+          }),
+          201,
+        );
+      }
     }
 
     return error("Method not allowed.", 405);
@@ -51,6 +67,7 @@ export const config: Config = {
 function parseInput(form: FormData): ReportInput {
   return {
     vin: String(form.get("vin") || "").trim(),
+    vinLast8Input: String(form.get("vinLast8Input") || "").trim(),
     brand: String(form.get("brand") || "").trim(),
     model: String(form.get("model") || "").trim(),
     location: String(form.get("location") || "").trim(),
@@ -60,9 +77,24 @@ function parseInput(form: FormData): ReportInput {
   };
 }
 
+async function toTelegramUploads(photos: File[]): Promise<TelegramPhotoUpload[]> {
+  return Promise.all(
+    photos.map(async (photo) => ({
+      originalName: photo.name,
+      mimeType: photo.type,
+      size: photo.size,
+      body: Buffer.from(await photo.arrayBuffer()),
+    })),
+  );
+}
+
 function validateInput(input: ReportInput): string | undefined {
-  if (input.vin.length !== 17) {
+  if (input.vin && input.vin.length !== 17) {
     return "VIN must have exactly 17 characters.";
+  }
+
+  if (!input.vin && input.vinLast8Input.length !== 8) {
+    return "Enter a full 17-character VIN or an 8-character VIS / VIN last 8.";
   }
 
   if (!input.damageArea) {

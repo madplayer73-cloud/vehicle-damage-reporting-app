@@ -4,6 +4,7 @@ export type Report = {
   reportId: string;
   vin: string;
   vinLast8: string;
+  vinLast8Input?: string;
   brand: string;
   model: string;
   location: string;

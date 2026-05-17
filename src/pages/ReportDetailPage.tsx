@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, Send } from "lucide-react";
-import { getReport, sendReport } from "../lib/api";
+import { ArrowLeft } from "lucide-react";
+import { getReport } from "../lib/api";
 import type { Report } from "../lib/types";
 import { PageHeader } from "../components/PageHeader";
 import { StatusBadge } from "../components/StatusBadge";
@@ -13,27 +13,12 @@ type ReportDetailPageProps = {
 export function ReportDetailPage({ reportId, onBack }: ReportDetailPageProps) {
   const [report, setReport] = useState<Report>();
   const [error, setError] = useState("");
-  const [isSending, setIsSending] = useState(false);
 
   useEffect(() => {
     getReport(reportId)
       .then(setReport)
       .catch((loadError) => setError(loadError instanceof Error ? loadError.message : "Could not load report."));
   }, [reportId]);
-
-  const handleSend = async () => {
-    setIsSending(true);
-    setError("");
-
-    try {
-      setReport(await sendReport(reportId));
-    } catch (sendError) {
-      setError(sendError instanceof Error ? sendError.message : "Telegram sending failed.");
-      getReport(reportId).then(setReport).catch(() => undefined);
-    } finally {
-      setIsSending(false);
-    }
-  };
 
   if (!report) {
     return (
@@ -56,7 +41,7 @@ export function ReportDetailPage({ reportId, onBack }: ReportDetailPageProps) {
 
       <PageHeader
         eyebrow={report.reportId}
-        title={`${report.vinLast8} damage report`}
+        title={`${report.vinLast8 || "Vehicle"} damage report`}
         description={`${report.damageArea} reported on ${new Date(report.timestamp).toLocaleString()}.`}
       />
 
@@ -67,30 +52,25 @@ export function ReportDetailPage({ reportId, onBack }: ReportDetailPageProps) {
             <StatusBadge status={report.telegramStatus} />
           </div>
           <div className="review-grid">
-            <DetailRow label="VIN" value={report.vin} />
-            <DetailRow label="VIN last 8" value={report.vinLast8} />
+            <DetailRow label="VIN" value={report.vin || "-"} />
+            <DetailRow label="VIS / VIN last 8" value={report.vinLast8 || "-"} />
             <DetailRow label="Brand" value={report.brand || "-"} />
             <DetailRow label="Model" value={report.model || "-"} />
             <DetailRow label="Location" value={report.location || "-"} />
             <DetailRow label="Reported by" value={report.reportedBy || "-"} />
             <DetailRow label="Damage area" value={report.damageArea} />
             <DetailRow label="Description" value={report.damageDescription} />
+            <DetailRow label="Photos" value={`${report.photos.length} archived in Telegram`} />
           </div>
           {report.telegramError && <div className="error-box">{report.telegramError}</div>}
-          <button onClick={handleSend} disabled={isSending}>
-            Send to Telegram
-            <Send size={18} />
-          </button>
         </div>
 
         <div className="panel">
-          <h2>Photos</h2>
-          <div className="photo-grid detail">
+          <h2>Telegram photo archive</h2>
+          <p className="muted-copy">Photos are not stored in the app. Use the Telegram report thread as the photo archive.</p>
+          <div className="file-list">
             {report.photos.map((photo) => (
-              <figure key={photo.filename}>
-                <img src={photo.url} alt={photo.originalName} />
-                <figcaption>{photo.originalName}</figcaption>
-              </figure>
+              <div key={photo.filename}>{photo.originalName}</div>
             ))}
           </div>
         </div>

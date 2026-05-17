@@ -1,7 +1,6 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
-import { basename, extname, join, resolve } from "node:path";
-import { randomUUID } from "node:crypto";
+import { join, resolve } from "node:path";
 import { getStore } from "@netlify/blobs";
 import type { Report, ReportInput, ReportPhoto } from "./types";
 
@@ -16,7 +15,6 @@ type StoreData = {
 };
 
 const reportsKey = "reports.json";
-const photoPrefix = "photos/";
 
 function storageRoot(): string {
   const configured = Netlify.env.get("REPORT_STORAGE_DIR");
@@ -25,10 +23,6 @@ function storageRoot(): string {
 
 function reportsFile(): string {
   return join(storageRoot(), "reports.json");
-}
-
-function photosDir(): string {
-  return join(storageRoot(), "photos");
 }
 
 function storageDriver(): "local" | "blobs" {
@@ -44,12 +38,8 @@ function reportStore() {
   return getStore({ name: "vehicle-damage-reports", consistency: "strong" });
 }
 
-function photoStore() {
-  return getStore({ name: "vehicle-damage-photos", consistency: "strong" });
-}
-
 async function ensureStorage(): Promise<void> {
-  await mkdir(photosDir(), { recursive: true });
+  await mkdir(storageRoot(), { recursive: true });
   if (!existsSync(reportsFile())) {
     await writeFile(reportsFile(), JSON.stringify({ reports: [] }, null, 2), "utf8");
   }
@@ -95,16 +85,21 @@ export async function updateReport(updatedReport: Report): Promise<Report> {
   return updatedReport;
 }
 
-export async function createReport(input: ReportInput, photos: File[]): Promise<Report> {
+export async function createReport(
+  input: ReportInput,
+  photos: ReportPhoto[],
+  telegramStatus: Report["telegramStatus"],
+  telegramError?: string,
+): Promise<Report> {
   const store = await readStore();
   const timestamp = new Date().toISOString();
   const reportId = nextReportId(store.reports, timestamp);
-  const savedPhotos = await savePhotos(reportId, photos);
 
   const report: Report = {
     reportId,
     vin: input.vin.toUpperCase(),
-    vinLast8: input.vin.slice(-8).toUpperCase(),
+    vinLast8: vinLast8For(input),
+    vinLast8Input: input.vinLast8Input.toUpperCase(),
     brand: input.brand,
     model: input.model,
     location: input.location,
@@ -112,8 +107,9 @@ export async function createReport(input: ReportInput, photos: File[]): Promise<
     damageArea: input.damageArea,
     damageDescription: input.damageDescription,
     timestamp,
-    photos: savedPhotos,
-    telegramStatus: "pending",
+    photos,
+    telegramStatus,
+    telegramError,
   };
 
   store.reports.push(report);
@@ -121,75 +117,12 @@ export async function createReport(input: ReportInput, photos: File[]): Promise<
   return report;
 }
 
-export async function readPhoto(filename: string): Promise<{ body: Buffer; mimeType: string } | undefined> {
-  const safeName = basename(filename);
-
-  if (storageDriver() === "blobs") {
-    const key = `${photoPrefix}${safeName}`;
-    const stored = await photoStore().getWithMetadata(key, { type: "arrayBuffer" });
-
-    if (!stored) {
-      return undefined;
-    }
-
-    const metadata = stored.metadata as { contentType?: string } | null;
-    return {
-      body: Buffer.from(stored.data),
-      mimeType: metadata?.contentType || contentTypeFromName(safeName),
-    };
+function vinLast8For(input: ReportInput): string {
+  if (input.vin.length === 17) {
+    return input.vin.slice(-8).toUpperCase();
   }
 
-  const filePath = join(photosDir(), safeName);
-
-  if (!existsSync(filePath)) {
-    return undefined;
-  }
-
-  return {
-    body: await readFile(filePath),
-    mimeType: contentTypeFromName(safeName),
-  };
-}
-
-async function savePhotos(reportId: string, photos: File[]): Promise<ReportPhoto[]> {
-  const saved: ReportPhoto[] = [];
-
-  for (const photo of photos) {
-    const extension = extensionFor(photo);
-    const filename = `${reportId}-${randomUUID()}${extension}`;
-    const bytes = Buffer.from(await photo.arrayBuffer());
-
-    if (storageDriver() === "blobs") {
-      await photoStore().set(`${photoPrefix}${filename}`, bytes, {
-        metadata: { contentType: photo.type, originalName: photo.name },
-      });
-    } else {
-      await writeFile(join(photosDir(), filename), bytes);
-    }
-
-    saved.push({
-      filename,
-      originalName: photo.name,
-      mimeType: photo.type,
-      size: photo.size,
-      url: `/api/photos/${encodeURIComponent(filename)}`,
-    });
-  }
-
-  return saved;
-}
-
-function contentTypeFromName(filename: string): string {
-  const ext = extname(filename).toLowerCase();
-  return ext === ".png" ? "image/png" : "image/jpeg";
-}
-
-function extensionFor(file: File): string {
-  if (file.type === "image/png") {
-    return ".png";
-  }
-
-  return ".jpg";
+  return input.vinLast8Input.toUpperCase();
 }
 
 function nextReportId(reports: Report[], timestamp: string): string {

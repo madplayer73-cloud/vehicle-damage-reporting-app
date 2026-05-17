@@ -1,5 +1,4 @@
-import { readPhoto } from "./storage";
-import type { Report } from "./types";
+import type { Report, ReportPhoto } from "./types";
 
 declare const Netlify: {
   env: {
@@ -7,7 +6,14 @@ declare const Netlify: {
   };
 };
 
-export async function sendReportToTelegram(report: Report): Promise<void> {
+export type TelegramPhotoUpload = {
+  originalName: string;
+  mimeType: string;
+  size: number;
+  body: Buffer;
+};
+
+export async function sendReportToTelegram(report: Report, photos: TelegramPhotoUpload[] = []): Promise<void> {
   const token = Netlify.env.get("TELEGRAM_BOT_TOKEN");
   const chatId = Netlify.env.get("TELEGRAM_CHAT_ID");
 
@@ -20,28 +26,32 @@ export async function sendReportToTelegram(report: Report): Promise<void> {
     text: formatReport(report),
   });
 
-  await sendPhotoAlbums(token, chatId, report);
+  await sendPhotoAlbums(token, chatId, photos);
 }
 
-async function sendPhotoAlbums(token: string, chatId: string, report: Report): Promise<void> {
+export function toReportPhotos(photos: TelegramPhotoUpload[]): ReportPhoto[] {
+  return photos.map((photo) => ({
+    filename: photo.originalName,
+    originalName: photo.originalName,
+    mimeType: photo.mimeType,
+    size: photo.size,
+    url: "",
+  }));
+}
+
+async function sendPhotoAlbums(token: string, chatId: string, photos: TelegramPhotoUpload[]): Promise<void> {
   const chunkSize = 10;
 
-  for (let start = 0; start < report.photos.length; start += chunkSize) {
-    const photoChunk = report.photos.slice(start, start + chunkSize);
+  for (let start = 0; start < photos.length; start += chunkSize) {
+    const photoChunk = photos.slice(start, start + chunkSize);
     const form = new FormData();
     const media: Array<{ type: "photo"; media: string }> = [];
 
     form.append("chat_id", chatId);
 
     for (const [index, photo] of photoChunk.entries()) {
-      const storedPhoto = await readPhoto(photo.filename);
-
-      if (!storedPhoto) {
-        throw new Error(`Photo ${photo.filename} was not found.`);
-      }
-
       const fieldName = `photo_${start + index}`;
-      form.append(fieldName, new Blob([storedPhoto.body], { type: storedPhoto.mimeType }), photo.originalName);
+      form.append(fieldName, new Blob([photo.body], { type: photo.mimeType }), photo.originalName);
       media.push({ type: "photo", media: `attach://${fieldName}` });
     }
 
@@ -72,7 +82,7 @@ function formatReport(report: Report): string {
     "Vehicle Damage Report",
     "",
     `Report ID: ${report.reportId}`,
-    `VIN: ${report.vin}`,
+    `VIN: ${report.vin || "-"}`,
     `VIN last 8: ${report.vinLast8}`,
     `Brand: ${report.brand || "-"}`,
     `Model: ${report.model || "-"}`,

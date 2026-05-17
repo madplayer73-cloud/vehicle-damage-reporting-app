@@ -32,6 +32,7 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
     <main className="login-shell">
       <form className="login-panel" onSubmit={submit}>
         <div className="brand-mark">DR</div>
+        <div className="version-badge light">Beta V_0</div>
         <LockKeyhole size={34} />
         <div>
           <h1>Vehicle Damage Reporting App</h1>

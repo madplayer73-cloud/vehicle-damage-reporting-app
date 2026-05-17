@@ -4,11 +4,13 @@ import { NewReportPage } from "./pages/NewReportPage";
 import { ReportsPage } from "./pages/ReportsPage";
 import { ReportDetailPage } from "./pages/ReportDetailPage";
 import { LoginPage } from "./pages/LoginPage";
+import { SettingsPage } from "./pages/SettingsPage";
 import { clearAccessCode, getAccessCode } from "./lib/api";
 
 type Route =
   | { name: "new-report" }
   | { name: "reports" }
+  | { name: "settings" }
   | { name: "report-detail"; id: string };
 
 export function App() {
@@ -29,6 +31,10 @@ export function App() {
 
     if (path === "/reports") {
       return { name: "reports" };
+    }
+
+    if (path === "/settings") {
+      return { name: "settings" };
     }
 
     return { name: "new-report" };
@@ -58,6 +64,7 @@ export function App() {
             <span>Reporting App</span>
           </div>
         </div>
+        <div className="version-badge">Beta V_0</div>
 
         <nav className="nav-list" aria-label="Main navigation">
           <button className={route.name === "new-report" ? "active" : ""} onClick={() => navigate("/new-report")}>
@@ -68,7 +75,7 @@ export function App() {
             <ClipboardList size={18} />
             Reports
           </button>
-          <button disabled title="Telegram is configured through environment variables.">
+          <button className={route.name === "settings" ? "active" : ""} onClick={() => navigate("/settings")}>
             <Settings size={18} />
             Settings
           </button>
@@ -82,6 +89,7 @@ export function App() {
       <main className="main-content">
         {route.name === "new-report" && <NewReportPage onCreated={(id) => navigate(`/reports/${id}`)} />}
         {route.name === "reports" && <ReportsPage onOpen={(id) => navigate(`/reports/${id}`)} />}
+        {route.name === "settings" && <SettingsPage />}
         {route.name === "report-detail" && <ReportDetailPage reportId={route.id} onBack={() => navigate("/reports")} />}
       </main>
     </div>

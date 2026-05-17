@@ -1,7 +1,5 @@
 import type { Config, Context } from "@netlify/functions";
-import { getReport, updateReport } from "./_shared/storage";
-import { error, json } from "./_shared/response";
-import { sendReportToTelegram } from "./_shared/telegram";
+import { error } from "./_shared/response";
 import { hasValidAccessCode } from "./_shared/auth";
 
 export default async (req: Request, context: Context) => {
@@ -13,29 +11,7 @@ export default async (req: Request, context: Context) => {
     return error("Invalid access code.", 401);
   }
 
-  const reportId = context.params.id;
-  if (!reportId) {
-    return error("Report ID is required.", 400);
-  }
-
-  const report = await getReport(reportId);
-  if (!report) {
-    return error("Report not found.", 404);
-  }
-
-  try {
-    await sendReportToTelegram(report);
-    return json(await updateReport({ ...report, telegramStatus: "sent", telegramError: undefined }));
-  } catch (sendError) {
-    return json(
-      await updateReport({
-        ...report,
-        telegramStatus: "failed",
-        telegramError: sendError instanceof Error ? sendError.message : "Telegram send failed.",
-      }),
-      502,
-    );
-  }
+  return error("Photo resend is unavailable because photos are archived in Telegram only.", 410);
 };
 
 export const config: Config = {

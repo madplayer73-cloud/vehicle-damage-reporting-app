@@ -1,6 +1,6 @@
 # Vehicle Damage Reporting App
 
-MVP web app for structured vehicle damage reporting in automotive logistics. The app guides a reporter through VIN entry, damaged area selection, photo upload, review, local storage and Telegram sending.
+MVP web app for structured vehicle damage reporting in automotive logistics. The app guides a reporter through VIN entry, damaged area selection, photo upload, review, Telegram sending and report metadata storage.
 
 ## Stack
 
@@ -89,10 +89,9 @@ For multiple users sending reports into the same place, use a Telegram group and
 4. Select a damaged area.
 5. Add a description.
 6. Upload at least one JPG, JPEG or PNG.
-7. Save the report.
-8. Click `Send to Telegram`.
+7. Click `Save & send`.
 
-The app sends a text summary first, then each photo as an attachment.
+The app sends a text summary first, then the uploaded photos as a Telegram album. Photos are archived in Telegram only; the app stores report text metadata and photo names/counts.
 
 For VIN entry, mobile users can use the scan button next to the VIN field. Camera scanning works on HTTPS, including the Netlify production URL.
 
@@ -104,7 +103,7 @@ For local development, reports are saved in:
 local-data/reports.json
 ```
 
-Photos are saved in:
+Photos are sent to Telegram and are not stored permanently by the app. For local development, this folder remains available but should stay empty in the Telegram-only archive flow:
 
 ```text
 local-data/photos/
@@ -112,27 +111,27 @@ local-data/photos/
 
 These files are ignored by Git.
 
-On Netlify production, leave `REPORT_STORAGE_DRIVER` unset or set it to `blobs`. The app then uses Netlify Blobs for durable report and photo storage.
+On Netlify production, leave `REPORT_STORAGE_DRIVER` unset or set it to `blobs`. The app then uses Netlify Blobs for durable report metadata storage. Photos remain archived in Telegram.
 
 ## API Routes
 
 - `GET /api/reports` lists all reports
 - `POST /api/reports` creates a report from multipart form data
 - `GET /api/reports/:id` returns report detail
-- `POST /api/reports/:id/send` sends a saved report to Telegram
-- `GET /api/photos/:filename` serves locally stored photos
+- `POST /api/reports/:id/send` returns unavailable because photos are archived in Telegram only
+- `GET /api/photos/:filename` returns unavailable because photos are archived in Telegram only
 
 ## Known Limitations
 
 - Local JSON storage is for MVP and local testing only.
-- Production deploys should use Netlify Blobs, which is the default on Netlify.
-- No user login or role permissions yet.
-- No VIN OCR, barcode scanning, PDF export or Excel export yet.
+- Production deploys should use Netlify Blobs for metadata, which is the default on Netlify.
+- Access is protected by MVP user codes, not full account login yet.
+- No VIN OCR, PDF export or Excel export yet.
 - Telegram sending depends on bot permissions and correct chat ID.
 
 ## Next Development Steps
 
-1. Replace local JSON storage with a cloud database and durable file storage.
+1. Replace local JSON storage with a cloud database for report metadata.
 2. Add user login and roles: admin, viewer and reporter.
 3. Add damage workflow states: new, checked, approved, rejected and closed.
 4. Add VIN OCR and QR/barcode scanning.

@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
-import { Camera, Check, ChevronLeft, ChevronRight, ScanLine, Send, Upload } from "lucide-react";
-import { createReport, getUserName, sendReport } from "../lib/api";
-import { DAMAGE_AREAS, type ReportDraft } from "../lib/types";
+import { Camera, Check, ChevronLeft, ChevronRight, ScanLine, Upload } from "lucide-react";
+import { createReport, getUserName } from "../lib/api";
+import { DAMAGE_AREAS, type ReportDraft, type TelegramStatus } from "../lib/types";
 import { PageHeader } from "../components/PageHeader";
 import { VinScanner } from "../components/VinScanner";
 
@@ -13,6 +13,7 @@ const steps = ["Vehicle", "Area", "Description", "Photos", "Review", "Send"];
 
 const initialDraft: ReportDraft = {
   vin: "",
+  vinLast8Input: "",
   brand: "",
   model: "",
   location: "",
@@ -26,11 +27,13 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
   const [draft, setDraft] = useState<ReportDraft>(() => ({ ...initialDraft, reportedBy: getUserName() }));
   const [photos, setPhotos] = useState<File[]>([]);
   const [createdId, setCreatedId] = useState<string>();
+  const [createdStatus, setCreatedStatus] = useState<TelegramStatus>("pending");
   const [error, setError] = useState("");
+  const [scanWarning, setScanWarning] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
 
-  const vinLast8 = draft.vin.slice(-8).toUpperCase();
+  const vinLast8 = draft.vin.length === 17 ? draft.vin.slice(-8).toUpperCase() : draft.vinLast8Input || "";
   const photoPreviews = useMemo(
     () => photos.map((photo) => ({ name: photo.name, url: URL.createObjectURL(photo) })),
     [photos],
@@ -72,27 +75,13 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
       photos.forEach((photo) => form.append("photos", photo));
       const report = await createReport(form);
       setCreatedId(report.reportId);
+      setCreatedStatus(report.telegramStatus);
+      if (report.telegramStatus === "failed") {
+        setError(report.telegramError || "Report saved, but Telegram sending failed.");
+      }
       setStep(5);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Could not create report.");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const sendCreatedReport = async () => {
-    if (!createdId) {
-      return;
-    }
-
-    setIsSubmitting(true);
-    setError("");
-
-    try {
-      await sendReport(createdId);
-      onCreated(createdId);
-    } catch (sendError) {
-      setError(sendError instanceof Error ? sendError.message : "Report saved, but Telegram sending failed.");
     } finally {
       setIsSubmitting(false);
     }
@@ -134,6 +123,17 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
                 </div>
                 <small>{draft.vin.length}/17 characters</small>
               </label>
+              <label className="field wide">
+                VIS / VIN last 8
+                <input
+                  value={draft.vinLast8Input || ""}
+                  maxLength={8}
+                  onChange={(event) => update("vinLast8Input", event.target.value.toUpperCase())}
+                  placeholder="Last 8 characters"
+                />
+                <small>{(draft.vinLast8Input || "").length}/8 characters</small>
+              </label>
+              {scanWarning && <div className="warning-box">{scanWarning}</div>}
               <label className="field">
                 Brand
                 <input value={draft.brand} onChange={(event) => update("brand", event.target.value)} placeholder="Peugeot" />
@@ -154,7 +154,7 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
                 Reported by
                 <input value={draft.reportedBy} onChange={(event) => update("reportedBy", event.target.value)} placeholder="Attila" />
               </label>
-              {draft.vin.length === 17 && <div className="confirmation">VIN confirmed. Last 8 characters: {vinLast8}</div>}
+              {vinLast8.length === 8 && <div className="confirmation">Vehicle identifier confirmed. Last 8 characters: {vinLast8}</div>}
             </div>
           )}
 
@@ -210,8 +210,8 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
 
           {step === 4 && (
             <div className="review-grid">
-              <ReviewRow label="VIN" value={draft.vin} />
-              <ReviewRow label="VIN last 8" value={vinLast8} />
+              <ReviewRow label="VIN" value={draft.vin || "-"} />
+              <ReviewRow label="VIS / VIN last 8" value={vinLast8} />
               <ReviewRow label="Brand/model" value={`${draft.brand || "-"} ${draft.model || ""}`} />
               <ReviewRow label="Location" value={draft.location || "-"} />
               <ReviewRow label="Reported by" value={draft.reportedBy || "-"} />
@@ -225,7 +225,12 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
             <div className="send-panel">
               <Camera size={40} />
               <h2>Report is saved</h2>
-              <p>Report ID: {createdId}. Send the structured text and attached photos to Telegram.</p>
+              <p>
+                Report ID: {createdId}.{" "}
+                {createdStatus === "sent"
+                  ? "Photos are archived in Telegram and metadata is saved in the app."
+                  : "Telegram sending needs attention; metadata is saved in the app."}
+              </p>
             </div>
           )}
 
@@ -244,14 +249,14 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
             )}
             {step === 4 && (
               <button onClick={submitReport} disabled={isSubmitting}>
-                Save report
+                Save & send
                 <Check size={18} />
               </button>
             )}
             {step === 5 && (
-              <button onClick={sendCreatedReport} disabled={isSubmitting}>
-                Send to Telegram
-                <Send size={18} />
+              <button onClick={() => createdId && onCreated(createdId)} disabled={!createdId}>
+                Open report
+                <ChevronRight size={18} />
               </button>
             )}
           </div>
@@ -260,9 +265,23 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
       {isScannerOpen && (
         <VinScanner
           onClose={() => setIsScannerOpen(false)}
-          onDetected={(vin) => {
-            update("vin", vin);
-            setIsScannerOpen(false);
+          onDetected={(result) => {
+            if (result.kind === "vin") {
+              update("vin", result.value);
+              update("vinLast8Input", result.value.slice(-8));
+              setScanWarning("");
+              setIsScannerOpen(false);
+              return;
+            }
+
+            if (result.kind === "vis") {
+              update("vinLast8Input", result.value);
+              setScanWarning("");
+              setIsScannerOpen(false);
+              return;
+            }
+
+            setScanWarning("Scanned code does not look like VIN or VIS. Find VIN/VIS and scan it, or enter it manually.");
           }}
         />
       )}
@@ -280,8 +299,12 @@ function ReviewRow({ label, value }: { label: string; value: string }) {
 }
 
 function validateStep(step: number, draft: ReportDraft, photos: File[]): string {
-  if (step === 0 && draft.vin.length !== 17) {
+  if (step === 0 && draft.vin && draft.vin.length !== 17) {
     return "VIN must have exactly 17 characters.";
+  }
+
+  if (step === 0 && !draft.vin && (draft.vinLast8Input || "").length !== 8) {
+    return "Enter a full 17-character VIN or an 8-character VIS / VIN last 8.";
   }
 
   if (step === 1 && !draft.damageArea) {
