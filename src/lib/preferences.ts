@@ -102,7 +102,9 @@ export type TranslationKey =
   | "new.uploadPhotos"
   | "new.uploadHint"
   | "new.photoLimit"
-  | "new.photoLimitWarning"
+  | "new.photoRecommendation"
+  | "new.photoRecommendedCount"
+  | "new.photosSelected"
   | "new.removePhoto"
   | "new.reviewVin"
   | "new.reviewVis"
@@ -121,7 +123,6 @@ export type TranslationKey =
   | "new.validateArea"
   | "new.validateDescription"
   | "new.validatePhotos"
-  | "new.validatePhotoLimit"
   | "reports.eyebrow"
   | "reports.title"
   | "reports.description"
@@ -198,8 +199,10 @@ export const translations: Record<Language, Record<TranslationKey, string>> = {
     "new.cameraHint": "Open mobile camera.",
     "new.uploadPhotos": "Upload photos",
     "new.uploadHint": "JPG, JPEG and PNG are supported.",
-    "new.photoLimit": "photos maximum",
-    "new.photoLimitWarning": "Maximum 10 photos can be attached. Extra photos were ignored.",
+    "new.photoLimit": "recommended photos",
+    "new.photoRecommendation": "Recommended count for one vehicle is up to 10 photos. More photos will still be sent to Telegram in albums.",
+    "new.photoRecommendedCount": "(recommended up to 10)",
+    "new.photosSelected": "photos selected",
     "new.removePhoto": "Remove photo",
     "new.reviewVin": "VIN",
     "new.reviewVis": "VIS / VIN last 8",
@@ -218,7 +221,6 @@ export const translations: Record<Language, Record<TranslationKey, string>> = {
     "new.validateArea": "Select a damaged area.",
     "new.validateDescription": "Add a damage description.",
     "new.validatePhotos": "Add at least one photo.",
-    "new.validatePhotoLimit": "Attach maximum 10 photos.",
     "reports.eyebrow": "Admin",
     "reports.title": "Report list",
     "reports.description": "Search reports by VIN, last 8 characters, brand or damaged area.",
@@ -294,8 +296,10 @@ export const translations: Record<Language, Record<TranslationKey, string>> = {
     "new.cameraHint": "Otvori fotak v mobile.",
     "new.uploadPhotos": "Nahrat fotky",
     "new.uploadHint": "Podporovane su JPG, JPEG a PNG.",
-    "new.photoLimit": "fotiek maximum",
-    "new.photoLimitWarning": "Maximum je 10 fotiek. Fotky nad limit boli ignorovane.",
+    "new.photoLimit": "odporucany pocet fotiek",
+    "new.photoRecommendation": "Odporucany pocet pre jedno vozidlo je do 10 fotiek. Viac fotiek sa aj tak odosle do Telegramu po albumoch.",
+    "new.photoRecommendedCount": "(odporucane do 10)",
+    "new.photosSelected": "fotiek vybranych",
     "new.removePhoto": "Odstranit fotku",
     "new.reviewVin": "VIN",
     "new.reviewVis": "VIS / poslednych 8 z VIN",
@@ -314,7 +318,6 @@ export const translations: Record<Language, Record<TranslationKey, string>> = {
     "new.validateArea": "Vyber miesto poskodenia.",
     "new.validateDescription": "Dopln popis poskodenia.",
     "new.validatePhotos": "Pridaj aspon jednu fotku.",
-    "new.validatePhotoLimit": "Pridaj maximalne 10 fotiek.",
     "reports.eyebrow": "Admin",
     "reports.title": "Zoznam reportov",
     "reports.description": "Vyhladavanie podla VIN, poslednych 8 znakov, znacky alebo miesta poskodenia.",
@@ -390,8 +393,10 @@ export const translations: Record<Language, Record<TranslationKey, string>> = {
     "new.cameraHint": "Mobil kamera megnyitasa.",
     "new.uploadPhotos": "Fotok feltoltese",
     "new.uploadHint": "JPG, JPEG es PNG tamogatott.",
-    "new.photoLimit": "foto maximum",
-    "new.photoLimitWarning": "Maximum 10 foto csatolhato. A tobbi foto kihagyva.",
+    "new.photoLimit": "ajanlott fotoszam",
+    "new.photoRecommendation": "Egy jarmuhoz ajanlott legfeljebb 10 foto. Tobbet is elkuldunk Telegramra albumokban.",
+    "new.photoRecommendedCount": "(ajanlott legfeljebb 10)",
+    "new.photosSelected": "foto kivalasztva",
     "new.removePhoto": "Foto torlese",
     "new.reviewVin": "VIN",
     "new.reviewVis": "VIS / VIN utolso 8",
@@ -410,7 +415,6 @@ export const translations: Record<Language, Record<TranslationKey, string>> = {
     "new.validateArea": "Valassz serult reszt.",
     "new.validateDescription": "Add meg a kar leirasat.",
     "new.validatePhotos": "Adj hozza legalabb egy fotot.",
-    "new.validatePhotoLimit": "Maximum 10 fotot adj hozza.",
     "reports.eyebrow": "Admin",
     "reports.title": "Riport lista",
     "reports.description": "Kereses VIN, utolso 8 karakter, marka vagy serult resz alapjan.",

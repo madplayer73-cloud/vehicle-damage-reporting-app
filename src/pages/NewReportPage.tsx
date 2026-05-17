@@ -22,7 +22,7 @@ type NewReportPageProps = {
   onCreated?: (reportId: string) => void;
 };
 
-const maxPhotos = 10;
+const recommendedPhotoCount = 10;
 const steps = ["Vehicle", "Area", "Description", "Measure", "Photos", "Review", "Send"];
 
 const initialDraft: ReportDraft = {
@@ -49,6 +49,7 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
   const [createdId, setCreatedId] = useState<string>();
   const [createdStatus, setCreatedStatus] = useState<TelegramStatus>("pending");
   const [error, setError] = useState("");
+  const [photoNotice, setPhotoNotice] = useState("");
   const [scanWarning, setScanWarning] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isScannerOpen, setIsScannerOpen] = useState(false);
@@ -87,18 +88,22 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
     }
 
     setPhotos((current) => {
-      const nextPhotos = [...current, ...incoming].slice(0, maxPhotos);
-      if (current.length + incoming.length > maxPhotos) {
-        setError(t("new.photoLimitWarning"));
+      const nextPhotos = [...current, ...incoming];
+      if (nextPhotos.length > recommendedPhotoCount) {
+        setPhotoNotice(t("new.photoRecommendation"));
       } else {
-        setError("");
+        setPhotoNotice("");
       }
       return nextPhotos;
     });
   };
 
   const removePhoto = (indexToRemove: number) => {
-    setPhotos((current) => current.filter((_, index) => index !== indexToRemove));
+    setPhotos((current) => {
+      const nextPhotos = current.filter((_, index) => index !== indexToRemove);
+      setPhotoNotice(nextPhotos.length > recommendedPhotoCount ? t("new.photoRecommendation") : "");
+      return nextPhotos;
+    });
     setError("");
   };
 
@@ -126,6 +131,7 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
     setCreatedId(undefined);
     setCreatedStatus("pending");
     setError("");
+    setPhotoNotice("");
     setScanWarning("");
   };
 
@@ -420,7 +426,10 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
                   />
                 </label>
               </div>
-              <div className="photo-count">{photos.length}/{maxPhotos} {t("new.photoLimit")}</div>
+              <div className="photo-count">
+                {photos.length} {t("new.photosSelected")} {photos.length > recommendedPhotoCount ? t("new.photoRecommendedCount") : ""}
+              </div>
+              {photoNotice && <div className="warning-box">{photoNotice}</div>}
               <div className="photo-grid">
                 {photoPreviews.map((photo, index) => (
                   <figure key={photo.url}>
@@ -447,7 +456,7 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
               <ReviewRow label={t("new.area")} value={selectedArea?.label[language] || draft.damageArea} />
               <ReviewRow label={t("new.damageDescription")} value={draft.damageDescription} />
               <ReviewRow label={t("new.measurement")} value={measurementSummary || "-"} />
-              <ReviewRow label={t("new.photos")} value={`${photos.length}/${maxPhotos}`} />
+              <ReviewRow label={t("new.photos")} value={`${photos.length} ${t("new.photosSelected")}`} />
             </div>
           )}
 
@@ -596,10 +605,6 @@ function validateStep(step: number, draft: ReportDraft, photos: File[], t: (key:
 
   if ((step === 4 || step === 5) && photos.length === 0) {
     return t("new.validatePhotos");
-  }
-
-  if ((step === 4 || step === 5) && photos.length > maxPhotos) {
-    return t("new.validatePhotoLimit");
   }
 
   return "";

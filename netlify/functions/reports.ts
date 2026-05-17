@@ -155,10 +155,6 @@ function validatePhotos(photos: File[]): string | undefined {
     return "At least one JPG or PNG photo is required.";
   }
 
-  if (photos.length > 10) {
-    return "Maximum 10 photos are allowed.";
-  }
-
   const unsupported = photos.find((photo) => !allowedPhotoTypes.has(photo.type));
   if (unsupported) {
     return `${unsupported.name} is not a supported image type. Use JPG, JPEG or PNG.`;
