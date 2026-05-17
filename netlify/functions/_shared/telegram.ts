@@ -27,6 +27,7 @@ export async function sendReportToTelegram(report: Report, photos: TelegramPhoto
   });
 
   await sendPhotoAlbums(token, chatId, photos);
+  await sendCompletionMarker(token, chatId, report);
 }
 
 export function toReportPhotos(photos: TelegramPhotoUpload[]): ReportPhoto[] {
@@ -66,6 +67,16 @@ async function sendPhotoAlbums(token: string, chatId: string, photos: TelegramPh
       }
     });
   }
+}
+
+async function sendCompletionMarker(token: string, chatId: string, report: Report): Promise<void> {
+  const markers = ["✅", "🔵", "🟢", "🟡", "🟣", "🚗", "🏁", "📌"];
+  const marker = markers[Math.floor(Math.random() * markers.length)];
+
+  await callTelegram(token, "sendMessage", {
+    chat_id: chatId,
+    text: `${marker} ${report.reportId} complete`,
+  });
 }
 
 function formatReport(report: Report): string {

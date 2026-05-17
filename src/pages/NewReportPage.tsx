@@ -7,7 +7,7 @@ import { VinScanner } from "../components/VinScanner";
 import { usePreferences, type TranslationKey } from "../lib/preferences";
 
 type NewReportPageProps = {
-  onCreated: (reportId: string) => void;
+  onCreated?: (reportId: string) => void;
 };
 
 const steps = ["Vehicle", "Area", "Description", "Photos", "Review", "Send"];
@@ -43,6 +43,16 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
 
   const update = (field: keyof ReportDraft, value: string) => {
     setDraft((current) => ({ ...current, [field]: value }));
+  };
+
+  const resetReport = () => {
+    setStep(0);
+    setDraft({ ...initialDraft, reportedBy: getUserName() });
+    setPhotos([]);
+    setCreatedId(undefined);
+    setCreatedStatus("pending");
+    setError("");
+    setScanWarning("");
   };
 
   const next = () => {
@@ -256,8 +266,8 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
               </button>
             )}
             {step === 5 && (
-              <button onClick={() => createdId && onCreated(createdId)} disabled={!createdId}>
-                {t("new.openReport")}
+              <button onClick={resetReport} disabled={!createdId}>
+                {t("nav.newReport")}
                 <ChevronRight size={18} />
               </button>
             )}

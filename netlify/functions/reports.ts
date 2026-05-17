@@ -1,6 +1,5 @@
 import type { Config, Context } from "@netlify/functions";
-import { allowedPhotoTypes, type ReportInput } from "./_shared/types";
-import { createReport, getReport, listReports, updateReport } from "./_shared/storage";
+import { allowedPhotoTypes, type Report, type ReportInput } from "./_shared/types";
 import { error, json } from "./_shared/response";
 import { hasValidAccessCode } from "./_shared/auth";
 import { sendReportToTelegram, toReportPhotos, type TelegramPhotoUpload } from "./_shared/telegram";
@@ -12,12 +11,11 @@ export default async (req: Request, context: Context) => {
     }
 
     if (req.method === "GET" && context.params.id) {
-      const report = await getReport(context.params.id);
-      return report ? json(report) : error("Report not found.", 404);
+      return error("Reports are not stored in this Telegram-only archive mode.", 410);
     }
 
     if (req.method === "GET") {
-      return json(await listReports());
+      return json([]);
     }
 
     if (req.method === "POST") {
@@ -37,18 +35,18 @@ export default async (req: Request, context: Context) => {
       }
 
       const telegramPhotos = await toTelegramUploads(photos);
-      const pendingReport = await createReport(input, toReportPhotos(telegramPhotos), "pending");
+      const pendingReport = buildReport(input, telegramPhotos, "pending");
 
       try {
         await sendReportToTelegram(pendingReport, telegramPhotos);
-        return json(await updateReport({ ...pendingReport, telegramStatus: "sent", telegramError: undefined }), 201);
+        return json({ ...pendingReport, telegramStatus: "sent", telegramError: undefined }, 201);
       } catch (sendError) {
         return json(
-          await updateReport({
+          {
             ...pendingReport,
             telegramStatus: "failed",
             telegramError: sendError instanceof Error ? sendError.message : "Telegram send failed.",
-          }),
+          },
           201,
         );
       }
@@ -75,6 +73,40 @@ function parseInput(form: FormData): ReportInput {
     damageArea: String(form.get("damageArea") || "").trim(),
     damageDescription: String(form.get("damageDescription") || "").trim(),
   };
+}
+
+function buildReport(input: ReportInput, photos: TelegramPhotoUpload[], telegramStatus: Report["telegramStatus"]): Report {
+  const timestamp = new Date().toISOString();
+
+  return {
+    reportId: reportIdFor(timestamp),
+    vin: input.vin.toUpperCase(),
+    vinLast8: vinLast8For(input),
+    vinLast8Input: input.vinLast8Input.toUpperCase(),
+    brand: input.brand,
+    model: input.model,
+    location: input.location,
+    reportedBy: input.reportedBy,
+    damageArea: input.damageArea,
+    damageDescription: input.damageDescription,
+    timestamp,
+    photos: toReportPhotos(photos),
+    telegramStatus,
+  };
+}
+
+function reportIdFor(timestamp: string): string {
+  const datePart = timestamp.slice(0, 10).replaceAll("-", "");
+  const timePart = timestamp.slice(11, 19).replaceAll(":", "");
+  return `DR-${datePart}-${timePart}`;
+}
+
+function vinLast8For(input: ReportInput): string {
+  if (input.vin.length === 17) {
+    return input.vin.slice(-8).toUpperCase();
+  }
+
+  return input.vinLast8Input.toUpperCase();
 }
 
 async function toTelegramUploads(photos: File[]): Promise<TelegramPhotoUpload[]> {
