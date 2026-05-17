@@ -39,6 +39,7 @@ Set:
 TELEGRAM_BOT_TOKEN=your_bot_token
 TELEGRAM_CHAT_ID=your_chat_id
 APP_ACCESS_CODE=choose-a-shared-access-code
+APP_USERS=Attila:damage2026,Fero:fero2026
 REPORT_STORAGE_DRIVER=local
 REPORT_STORAGE_DIR=./local-data
 ```
@@ -46,6 +47,8 @@ REPORT_STORAGE_DIR=./local-data
 Secrets must stay in `.env` or Netlify environment variables. Do not commit real tokens.
 
 `APP_ACCESS_CODE` protects the app and API routes with a simple shared access code for the MVP. Give this code only to users who should create or view damage reports.
+
+`APP_USERS` is the preferred MVP access format for multiple users. Use comma-separated `Name:code` pairs. When a user signs in with their code, the app fills `Reported by` with that name.
 
 ## Create a Telegram Bot
 
@@ -90,6 +93,8 @@ For multiple users sending reports into the same place, use a Telegram group and
 8. Click `Send to Telegram`.
 
 The app sends a text summary first, then each photo as an attachment.
+
+For VIN entry, mobile users can use the scan button next to the VIN field. Camera scanning works on HTTPS, including the Netlify production URL.
 
 ## Local Storage
 

@@ -1,6 +1,6 @@
 import { FormEvent, useState } from "react";
 import { LockKeyhole } from "lucide-react";
-import { saveAccessCode, verifyAccessCode } from "../lib/api";
+import { saveAccessCode, saveUserName, verifyAccessCode } from "../lib/api";
 
 type LoginPageProps = {
   onAuthenticated: () => void;
@@ -17,8 +17,9 @@ export function LoginPage({ onAuthenticated }: LoginPageProps) {
     setError("");
 
     try {
-      await verifyAccessCode(accessCode.trim());
+      const auth = await verifyAccessCode(accessCode.trim());
       saveAccessCode(accessCode.trim());
+      saveUserName(auth.user.name);
       onAuthenticated();
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : "Access denied.");

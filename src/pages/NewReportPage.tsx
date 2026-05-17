@@ -1,8 +1,9 @@
 import { useMemo, useState } from "react";
-import { Camera, Check, ChevronLeft, ChevronRight, Send, Upload } from "lucide-react";
-import { createReport, sendReport } from "../lib/api";
+import { Camera, Check, ChevronLeft, ChevronRight, ScanLine, Send, Upload } from "lucide-react";
+import { createReport, getUserName, sendReport } from "../lib/api";
 import { DAMAGE_AREAS, type ReportDraft } from "../lib/types";
 import { PageHeader } from "../components/PageHeader";
+import { VinScanner } from "../components/VinScanner";
 
 type NewReportPageProps = {
   onCreated: (reportId: string) => void;
@@ -22,11 +23,12 @@ const initialDraft: ReportDraft = {
 
 export function NewReportPage({ onCreated }: NewReportPageProps) {
   const [step, setStep] = useState(0);
-  const [draft, setDraft] = useState<ReportDraft>(initialDraft);
+  const [draft, setDraft] = useState<ReportDraft>(() => ({ ...initialDraft, reportedBy: getUserName() }));
   const [photos, setPhotos] = useState<File[]>([]);
   const [createdId, setCreatedId] = useState<string>();
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
 
   const vinLast8 = draft.vin.slice(-8).toUpperCase();
   const photoPreviews = useMemo(
@@ -119,12 +121,17 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
             <div className="form-grid">
               <label className="field wide">
                 Full VIN
-                <input
-                  value={draft.vin}
-                  maxLength={17}
-                  onChange={(event) => update("vin", event.target.value.toUpperCase())}
-                  placeholder="VF3XXXXXXXXXXXXXX"
-                />
+                <div className="input-action">
+                  <input
+                    value={draft.vin}
+                    maxLength={17}
+                    onChange={(event) => update("vin", event.target.value.toUpperCase())}
+                    placeholder="VF3XXXXXXXXXXXXXX"
+                  />
+                  <button type="button" className="icon-button" title="Scan VIN barcode or QR" onClick={() => setIsScannerOpen(true)}>
+                    <ScanLine size={20} />
+                  </button>
+                </div>
                 <small>{draft.vin.length}/17 characters</small>
               </label>
               <label className="field">
@@ -250,6 +257,15 @@ export function NewReportPage({ onCreated }: NewReportPageProps) {
           </div>
         </div>
       </div>
+      {isScannerOpen && (
+        <VinScanner
+          onClose={() => setIsScannerOpen(false)}
+          onDetected={(vin) => {
+            update("vin", vin);
+            setIsScannerOpen(false);
+          }}
+        />
+      )}
     </section>
   );
 }

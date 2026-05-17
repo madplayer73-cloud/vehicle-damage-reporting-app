@@ -1,5 +1,5 @@
 import type { Config } from "@netlify/functions";
-import { hasValidAccessCode, isAccessCodeRequired } from "./_shared/auth";
+import { getAuthorizedUser, isAccessCodeRequired } from "./_shared/auth";
 import { error, json } from "./_shared/response";
 
 export default async (req: Request) => {
@@ -8,14 +8,15 @@ export default async (req: Request) => {
   }
 
   if (!isAccessCodeRequired()) {
-    return json({ ok: true, accessRequired: false });
+    return json({ ok: true, accessRequired: false, user: { name: "" } });
   }
 
-  if (!hasValidAccessCode(req)) {
+  const user = getAuthorizedUser(req);
+  if (!user) {
     return error("Invalid access code.", 401);
   }
 
-  return json({ ok: true, accessRequired: true });
+  return json({ ok: true, accessRequired: true, user });
 };
 
 export const config: Config = {

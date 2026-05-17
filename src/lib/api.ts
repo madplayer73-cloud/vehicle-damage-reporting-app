@@ -1,6 +1,15 @@
 import type { Report } from "./types";
 
 const accessCodeKey = "vehicle-damage-access-code";
+const userNameKey = "vehicle-damage-user-name";
+
+type AuthResponse = {
+  ok: boolean;
+  accessRequired: boolean;
+  user: {
+    name: string;
+  };
+};
 
 export function getAccessCode(): string {
   return window.sessionStorage.getItem(accessCodeKey) || "";
@@ -10,16 +19,25 @@ export function saveAccessCode(accessCode: string): void {
   window.sessionStorage.setItem(accessCodeKey, accessCode);
 }
 
-export function clearAccessCode(): void {
-  window.sessionStorage.removeItem(accessCodeKey);
+export function getUserName(): string {
+  return window.sessionStorage.getItem(userNameKey) || "";
 }
 
-export async function verifyAccessCode(accessCode: string): Promise<void> {
+export function saveUserName(userName: string): void {
+  window.sessionStorage.setItem(userNameKey, userName);
+}
+
+export function clearAccessCode(): void {
+  window.sessionStorage.removeItem(accessCodeKey);
+  window.sessionStorage.removeItem(userNameKey);
+}
+
+export async function verifyAccessCode(accessCode: string): Promise<AuthResponse> {
   const response = await fetch("/api/auth", {
     method: "POST",
     headers: accessHeaders(accessCode),
   });
-  await parseResponse(response);
+  return parseResponse<AuthResponse>(response);
 }
 
 async function parseResponse<T>(response: Response): Promise<T> {
